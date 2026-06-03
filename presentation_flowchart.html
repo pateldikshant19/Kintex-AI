@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Architecture Flowchart</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            width: 100%;
+            max-width: 1200px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #1e293b;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .diagram-container {
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+
+        /* Custom styling for mermaid diagram if needed, though usually handled by theme */
+        .download-hint {
+            margin-top: 1.5rem;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>AI Sports Analytics Platform Architecture</h1>
+        <div class="diagram-container">
+            <div class="mermaid">
+                %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#eff6ff',
+                'edgeLabelBackground':'#ffffff', 'tertiaryColor': '#f0fdf4', 'fontFamily': 'Inter', 'fontSize': '16px'
+                }}}%%
+                flowchart TD
+                subgraph Users ["👥 User Layer"]
+                direction TB
+                M[Manager 👨‍💼]
+                A[Athlete 🏃]
+                An[Analyst 📊]
+                end
+
+                subgraph Frontend ["💻 Frontend (React.js)"]
+                Auth[Authentication Module]
+                Dash[Interactive Dashboards]
+                Viz[Data Visualization (Chart.js)]
+                end
+
+                subgraph Backend ["⚙️ Backend (Node.js/Express)"]
+                API[REST API Gateway]
+                Sec[Security & Validation]
+                Logic[Business Logic Controller]
+                end
+
+                subgraph AI ["🤖 AI/ML Engine (Python)"]
+                Pred[Performance Prediction]
+                Risk[Injury Risk Assessment]
+                Rec[Recommendation System]
+                end
+
+                subgraph Database ["🗄️ Database (MongoDB)"]
+                DB1[(User Data)]
+                DB2[(Player Metrics)]
+                DB3[(Historical Stats)]
+                end
+
+                M --> Auth
+                A --> Auth
+                An --> Auth
+
+                Auth --> Dash
+                Dash --> Viz
+
+                Dash <-->|JSON Data| API
+                    Viz <-->|JSON Data| API
+
+                        API --> Sec
+                        Sec --> Logic
+
+                        Logic <-->|Read/Write| DB1
+                            Logic <-->|Read/Write| DB2
+                                Logic <-->|Read/Write| DB3
+
+                                    Logic -->|Request Analysis| Pred
+                                    Logic -->|Request Risk| Risk
+                                    Logic -->|Request Recs| Rec
+
+                                    Pred -.->|Model Stats| DB3
+                                    Risk -.->|Health Data| DB2
+            </div>
+        </div>
+        <p class="download-hint">💡 Tip: Use your browser's screenshot tool or "Print to PDF" to save this for your
+            presentation.</p>
+    </div>
+
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+</body>
+
+</html>

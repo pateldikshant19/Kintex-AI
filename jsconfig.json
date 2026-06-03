@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "react",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "*": ["src/*", "node_modules/*"]
+    }
+  },
+  "exclude": ["node_modules", "build", "dist"]
+}

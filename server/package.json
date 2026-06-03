@@ -1,0 +1,24 @@
+{
+  "name": "sport-analytics-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "python": "cd scripts && \"C:/Users/hp/OneDrive/Desktop/sport/.venv/Scripts/python.exe\" collect_match_data.py",
+    "dev": "concurrently \"nodemon server.js\" \"npm run python\""
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^7.5.0",
+    "nodemailer": "^7.0.12",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "nodemon": "^3.0.1"
+  }
+}

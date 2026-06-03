@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "69611683e5600d3341ea3c44",
+    "name": "Kinetix Test",
+    "email": "test7352@kinetix.ai",
+    "password": "$2a$10$sopIFLwMEFz9.4AURZk1e.S5eVT3WTo3yPDBPcx7bOCYd1B/ja42C",
+    "role": "manager",
+    "sport": "Football",
+    "isActive": true,
+    "createdAt": "2026-01-09T14:53:55.249Z",
+    "updatedAt": "2026-01-09T14:53:55.249Z",
+    "__v": 0
+  },
+  {
+    "_id": "696117ece5600d3341ea3c47",
+    "name": "Fixed UI Test",
+    "email": "fixed@kinetix.ai",
+    "password": "$2a$10$8B9dvCuKkgzPCaUxNUCH/.W6i66vQrN5GanPbbTwf4bpFPGPEtg9.",
+    "role": "analyst",
+    "sport": "Cricket",
+    "isActive": true,
+    "createdAt": "2026-01-09T14:59:56.797Z",
+    "updatedAt": "2026-01-09T14:59:56.797Z",
+    "__v": 0
+  }
+]

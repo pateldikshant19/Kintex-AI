@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetix AI: The Future of Sports Performance</title>
+    <!-- Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <style>
+        :root {
+            /* Premium Sports Palette */
+            --gold: #D4AF37;
+            --gold-dim: #997B28;
+            --dark-bg: #050505;
+            --card-bg: #0F0F0F;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --border: rgba(255, 255, 255, 0.08);
+            --accent-blue: #3B82F6;
+            --success: #10B981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-main);
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+        }
+
+        /* --- UTILITIES --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .gold-text {
+            background: linear-gradient(135deg, #FFF 0%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .blue-text {
+            background: linear-gradient(135deg, #FFF 0%, var(--accent-blue) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .section-padding {
+            padding: 8rem 0;
+        }
+
+        h1,
+        h2,
+        h3, 
+        h4 {
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        /* --- NAVIGATION --- */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+        }
+
+        /* --- HERO --- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+        }
+
+        .hero-questions {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        .q-pill {
+            padding: 8px 24px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .q-pill:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateY(-3px);
+        }
+
+        /* --- CARDS & GRID --- */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 4rem;
+        }
+
+        .info-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            padding: 2.5rem;
+            border-radius: 16px;
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--gold-dim);
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .info-card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* --- WORKFLOW VISUAL --- */
+        .workflow-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 4rem auto;
+            max-width: 900px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .wf-step {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .wf-icon-circle {
+            width: 80px;
+            height: 80px;
+            background: var(--card-bg);
+            border: 2px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 auto 1rem auto;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .wf-step:hover .wf-icon-circle {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.3);
+        }
+
+        .wf-label {
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .wf-sublabel {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .wf-connector {
+            flex: 1;
+            height: 2px;
+            background: var(--border);
+            margin: -30px 10px 0 10px;
+            position: relative;
+            min-width: 50px;
+        }
+
+        .wf-dot {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 8px;
+            height: 8px;
+            background: var(--gold);
+            border-radius: 50%;
+            transform: translateY(-50%);
+            animation: travel 3s infinite linear;
+            box-shadow: 0 0 10px var(--gold);
+        }
+
+        @keyframes travel {
+            0% { left: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        /* --- TECH STACK GRID --- */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .tech-card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .tech-card h4 {
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Code Block Styling */
+        pre {
+            background: #111;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            color: #d4d4d4;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        /* Comparison Table */
+        .comparison-container table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        .comparison-container th, .comparison-container td {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .comparison-container th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        
+        .highlight-col {
+            background: rgba(212, 175, 55, 0.05);
+            border-left: 1px solid var(--gold);
+            border-right: 1px solid var(--gold);
+        }
+        
+        .highlight-header {
+            color: var(--gold);
+            background: rgba(212, 175, 55, 0.05);
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--gold);
+            border-bottom: none;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .workflow-visual { flex-direction: column; gap: 2rem; }
+            .wf-connector { width: 2px; height: 50px; margin: 0; min-width: 0; }
+            .wf-dot { top: 0; left: 50%; transform: translateX(-50%); animation: travel-vertical 3s infinite linear; }
+        }
+        
+        @keyframes travel-vertical {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav>
+        <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-size: 1.5rem; font-weight: 800;">Kinetix<span style="color: var(--gold)">AI</span></div>
+            <div style="display: flex; gap: 2rem; font-size: 0.9rem;">
+                <a href="#why" style="color: white; text-decoration: none;">Why</a>
+                <a href="#workflow" style="color: white; text-decoration: none;">Workflow</a>
+                <a href="#roles" style="color: white; text-decoration: none;">Roles</a>
+                <a href="#tech" style="color: white; text-decoration: none;">Tech</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container" data-aos="fade-up">
+            <span style="color: var(--gold); letter-spacing: 2px; text-transform: uppercase; font-size: 0.9rem; font-weight: 600;">
+                The AI-Synchronized Sports Ecosystem
+            </span>
+            <h1>From Raw Talent to <br><span class="gold-text">Elite Performance</span></h1>
+            <p style="font-size: 1.2rem; max-width: 700px; margin: 0 auto;">
+                A comprehensive analytics platform for Football, Cricket, and Track & Field. 
+                <strong>Predict Injuries. Optimize Training. Unlock Potential.</strong>
+            </p>
+
+            <div class="hero-questions">
+                <a href="#why" class="q-pill">The Problem</a>
+                <a href="#workflow" class="q-pill">The Workflow</a>
+                <a href="#tech" class="q-pill">The Architecture</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- WHY / PROBLEM -->
+    <section id="why" class="section-padding">
+        <div class="container">
+            <div data-aos="fade-right">
+                <h2 style="font-size: 2.5rem; margin-bottom: 1rem;">Why? <span style="color: #444;">The "Guesswork" Problem</span></h2>
+                <p>Traditional sports coaching relies on intuition. In the age of AI, that's not enough.</p>
+            </div>
+
+            <div class="problem-grid">
+                <div class="info-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card-icon">🩺</div>
+                    <h3>Preventable Injuries</h3>
+                    <p style="margin-top: 10px;">Careers end prematurely because fatigue and injury risks aren't detected in time. 
+                    <strong>70% of injuries are non-contact and preventable.</strong></p>
+                </div>
+                <div class="info-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card-icon">📉</div>
+                    <h3>The Performance Plateau</h3>
+                    <p style="margin-top: 10px;">Athletes train hard, not smart. Without data-driven insights, 
+                    progress stalls and potential is wasted on inefficient drills.</p>
+                </div>
+                <div class="info-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card-icon">🧩</div>
+                    <h3>Siloed Data</h3>
+                    <p style="margin-top: 10px;">Health data, match stats, and training logs live in different apps. 
+                    Managers never get the <strong>complete picture</strong> of their squad.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- WORKFLOW -->
+    <section id="workflow" class="section-padding" style="background: linear-gradient(180deg, var(--dark-bg) 0%, #0a0a0a 100%);">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 4rem;" data-aos="fade-up">
+                <h2 style="font-size: 2.5rem;">How It Works? <span class="gold-text">The Sync Loop</span></h2>
+                <p>From Data Collection to Actionable Intelligence.</p>
+            </div>
+
+            <div class="workflow-visual" data-aos="zoom-in">
+                <div class="wf-step">
+                    <div class="wf-icon-circle">⌚</div>
+                    <div class="wf-label">Ingest</div>
+                    <div class="wf-sublabel">Wearables & Video</div>
+                </div>
+                <div class="wf-connector">
+                    <div class="wf-dot"></div>
+                </div>
+                <div class="wf-step">
+                    <div class="wf-icon-circle">🤖</div>
+                    <div class="wf-label">Process</div>
+                    <div class="wf-sublabel">ML Analysis</div>
+                </div>
+                <div class="wf-connector">
+                    <div class="wf-dot" style="animation-delay: 1s;"></div>
+                </div>
+                <div class="wf-step">
+                    <div class="wf-icon-circle">📊</div>
+                    <div class="wf-label">Visualize</div>
+                    <div class="wf-sublabel">Role Dashboards</div>
+                </div>
+                <div class="wf-connector">
+                    <div class="wf-dot" style="animation-delay: 2s;"></div>
+                </div>
+                <div class="wf-step">
+                    <div class="wf-icon-circle">🏆</div>
+                    <div class="wf-label">Optimize</div>
+                    <div class="wf-sublabel">Better Results</div>
+                </div>
+            </div>
+
+            <!-- Detailed API/Data Flow -->
+             <div class="problem-grid" style="grid-template-columns: repeat(2, 1fr);">
+                 <div class="info-card" data-aos="fade-right">
+                     <h3>🔌 API Architecture</h3>
+                     <p>A robust Node.js/Express backend serving comprehensive endpoints.</p>
+                     <div style="margin-top: 1rem;">
+                         <pre>
+POST /api/auth/login
+GET  /api/players?sport=football
+GET  /api/analytics/risk/:id
+POST /api/performance/upload
+                         </pre>
+                     </div>
+                 </div>
+                 <div class="info-card" data-aos="fade-left">
+                     <h3>🤖 ML Pipeline</h3>
+                     <p>Python microservices processing vast datasets.</p>
+                     <div style="margin-top: 1rem;">
+                        <ul style="list-style: none; color: var(--text-muted);">
+                            <li>• <strong>Injury Prediction:</strong> Random Forest Classifier</li>
+                            <li>• <strong>Performance Score:</strong> XGBoost Regression</li>
+                            <li>• <strong>Talent Scouting:</strong> Computer Vision (OpenCV)</li>
+                        </ul>
+                     </div>
+                 </div>
+             </div>
+        </div>
+    </section>
+
+    <!-- ROLES -->
+    <section id="roles" class="section-padding" style="border-top: 1px solid var(--border);">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 4rem;" data-aos="fade-up">
+                <h2 style="font-size: 2.5rem;">One Platform. <span class="blue-text">Three Views.</span></h2>
+                <p>Tailored experiences for every stakeholder.</p>
+            </div>
+
+            <div class="problem-grid">
+                <!-- Manager -->
+                <div class="info-card" data-aos="fade-up">
+                    <div class="card-icon">👨‍💼</div>
+                    <h3 style="color: var(--accent-blue);">The Manager</h3>
+                    <p>Oversees the entire squad. Visualizes team health, formation effectiveness, and upcoming fixtures.</p>
+                    <ul style="margin-top: 1rem; list-style: none; color: var(--text-muted);">
+                        <li>✓ Squad Availability</li>
+                        <li>✓ Tactical Analysis</li>
+                        <li>✓ Training Schedules</li>
+                    </ul>
+                </div>
+
+                <!-- Athlete -->
+                <div class="info-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card-icon">🏃‍♂️</div>
+                    <h3 style="color: var(--success);">The Athlete</h3>
+                    <p>Focuses on personal growth. Tracks personal bests, recovery status, and receives AI training nudges.</p>
+                    <ul style="margin-top: 1rem; list-style: none; color: var(--text-muted);">
+                        <li>✓ Personal Bests (PB)</li>
+                        <li>✓ Recovery Score</li>
+                        <li>✓ Load Management</li>
+                    </ul>
+                </div>
+
+                <!-- Analyst -->
+                <div class="info-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card-icon">📊</div>
+                    <h3 style="color: var(--gold);">The Analyst</h3>
+                    <p>Deep dives into the numbers. Extracts patterns, generates reports, and predicts future trends.</p>
+                    <ul style="margin-top: 1rem; list-style: none; color: var(--text-muted);">
+                        <li>✓ Advanced Metrics (xG, xA)</li>
+                        <li>✓ Video Analysis</li>
+                        <li>✓ Scout Reports</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DIFFERENTIATION -->
+    <section id="difference" class="section-padding" style="background: rgba(255,255,255,0.02); border-top: 1px solid var(--border);">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 4rem;" data-aos="fade-up">
+                <h2 style="font-size: 2.5rem;">Why <span class="gold-text">Kinetix AI</span>?</h2>
+            </div>
+            
+            <div class="comparison-container" data-aos="fade-up" style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Traditional Coaching</th>
+                            <th>Wearable Apps</th>
+                            <th class="highlight-header">Kinetix AI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="text-align: left; font-weight: 600;">Decision Making</td>
+                            <td>Gut Feeling / Intuition</td>
+                            <td>Raw Data Display</td>
+                            <td class="highlight-col" style="color: var(--success); font-weight: 600;">AI Predictive Models</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left; font-weight: 600;">Injury Prevention</td>
+                            <td>Reactive (Post-Injury)</td>
+                            <td>Basic Alerts</td>
+                            <td class="highlight-col" style="color: var(--success); font-weight: 600;">Proactive Risk Scoring</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left; font-weight: 600;">Data Integration</td>
+                            <td>Notebooks / Spreadsheets</td>
+                            <td>Device Silo</td>
+                            <td class="highlight-col" style="color: var(--success); font-weight: 600;">Unified Ecosystem</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- TECH STACK -->
+    <section id="tech" class="section-padding">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 4rem;" data-aos="fade-up">
+                <h2 style="font-size: 2.5rem;">Powered by <span class="gold-text">Modern Tech</span></h2>
+                <p>Enterprise-grade architecture for speed and scale.</p>
+            </div>
+
+            <div class="tech-grid">
+                <div class="tech-card" data-aos="flip-left">
+                    <h4>Frontend</h4>
+                    <p>React.js 18</p>
+                    <p>Tailwind CSS</p>
+                    <p>Chart.js</p>
+                </div>
+                <div class="tech-card" data-aos="flip-left" data-aos-delay="100">
+                    <h4>Backend</h4>
+                    <p>Node.js</p>
+                    <p>Express.js</p>
+                    <p>JWT Auth</p>
+                </div>
+                <div class="tech-card" data-aos="flip-left" data-aos-delay="200">
+                    <h4>Database</h4>
+                    <p>MongoDB</p>
+                    <p>Mongoose ODM</p>
+                    <p>Redis Cache</p>
+                </div>
+                <div class="tech-card" data-aos="flip-left" data-aos-delay="300">
+                    <h4>AI / ML</h4>
+                    <p>Python</p>
+                    <p>TensorFlow</p>
+                    <p>Scikit-Learn</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 4rem;" data-aos="fade-up">
+                <h3 style="text-align: center; margin-bottom: 2rem;">Database Schema</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+                    <div class="info-card" style="padding: 1.5rem;">
+                        <h4 style="color: var(--accent-blue); margin-bottom: 1rem;">User Collection</h4>
+                        <pre>
+{
+  "_id": "ObjectId",
+  "name": "Dikshant Patel",
+  "email": "admin@kinetix.ai",
+  "role": "manager", 
+  "sport": "cricket",
+  "permissions": ["read", "write"]
+}</pre>
+                    </div>
+                    <div class="info-card" style="padding: 1.5rem;">
+                        <h4 style="color: var(--success); margin-bottom: 1rem;">Player Collection</h4>
+                        <pre>
+{
+  "_id": "ObjectId",
+  "name": "Virat Kohli",
+  "stats": {
+      "matches": 250,
+      "runs": 12000,
+      "avg": 59.5
+  },
+  "injury_risk": "Low",
+  "last_training": "2023-10-24"
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="border-top: 1px solid var(--border); padding: 4rem 0; text-align: center; background: #000;">
+        <div class="container">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Kinetix<span style="color: var(--gold)">AI</span></h2>
+            <p>Empowering the next generation of champions.</p>
+            <div style="margin-top: 2rem; opacity: 0.5; font-size: 0.9rem;">
+                &copy; 2024 Kinetix AI Sports Analytics. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
+    </script>
+</body>
+</html>
