@@ -19,13 +19,14 @@ env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.
 load_dotenv(dotenv_path=env_path)
 
 # Constants
-CRICAPI_KEY = os.getenv("CRICAPI_KEY")
-CRICAPI_URL = "https://api.cricapi.com/v1/currentMatches"
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
+RAPIDAPI_URL = "https://cricbuzz-cricket.p.rapidapi.com/matches/v1/live"
+RAPIDAPI_HOST = "cricbuzz-cricket.p.rapidapi.com"
 # Fallback to local MongoDB if not provided in .env
 MONGO_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017/sport-analytics")
 DB_NAME = "sport-analytics"
 COLLECTION_NAME = "live_matches"
-POLL_INTERVAL_SECONDS = 30
+POLL_INTERVAL_SECONDS = 120
 
 def get_db_collection():
     """Establish connection to MongoDB and return the collection."""
@@ -45,27 +46,36 @@ def get_db_collection():
 
 def fetch_live_matches():
     """Fetch current live cricket matches from CricAPI."""
-    if not CRICAPI_KEY:
-        logger.error("CRICAPI_KEY is not set in the environment variables.")
+    if not RAPIDAPI_KEY:
+        logger.error("RAPIDAPI_KEY is not set in the environment variables.")
         return []
 
     try:
-        params = {
-            "apikey": CRICAPI_KEY,
-            "offset": 0
+        headers = {
+            "X-RapidAPI-Key": RAPIDAPI_KEY,
+            "X-RapidAPI-Host": RAPIDAPI_HOST
         }
         # Make the HTTP GET request
-        response = requests.get(CRICAPI_URL, params=params)
+        response = requests.get(RAPIDAPI_URL, headers=headers)
         response.raise_for_status() # Raise an exception for bad status codes (4xx, 5xx)
         
         data = response.json()
         
-        # Check if the API returned a success status
-        if data.get("status") != "success":
-            logger.error(f"API Error: {data.get('info', 'Unknown error')}")
-            return []
-            
-        return data.get("data", [])
+        # The structure from RapidAPI Cricbuzz might differ. We try to grab the matches array
+        # This part might need tuning based on the exact JSON schema of the API
+        if "typeMatches" in data:
+            # Often Cricbuzz returns data["typeMatches"] -> match -> matchInfo
+            matches = []
+            for tm in data["typeMatches"]:
+                if "seriesMatches" in tm:
+                    for sm in tm["seriesMatches"]:
+                        if "seriesAdWrapper" in sm and "matches" in sm["seriesAdWrapper"]:
+                            matches.extend(sm["seriesAdWrapper"]["matches"])
+            return matches
+        elif "matches" in data:
+            return data["matches"]
+        else:
+            return data.get("data", [])
         
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching data from CricAPI: {e}")
@@ -84,22 +94,24 @@ def store_matches_in_db(collection, matches):
 
     for match in matches:
         try:
-            # Extract the unique match ID
-            match_id = match.get("id")
+            # Adapted schema for Cricbuzz API style
+            match_info = match.get("matchInfo", match) # fallback to match if no matchInfo wrapper
+            match_id = match_info.get("matchId", match.get("id"))
+            
             if not match_id:
                 continue
 
             # Format the document we want to store based on your requirements
             match_document = {
                 "match_id": match_id,
-                "name": match.get("name"),
-                "status": match.get("status"),
-                "venue": match.get("venue"),
-                "matchType": match.get("matchType"),
-                "date": match.get("date"),
-                "dateTimeGMT": match.get("dateTimeGMT"),
+                "name": match_info.get("team1", {}).get("teamName", "") + " vs " + match_info.get("team2", {}).get("teamName", match.get("name")),
+                "status": match_info.get("status", match.get("status")),
+                "venue": match_info.get("venueInfo", {}).get("knownAs", match.get("venue")),
+                "matchType": match_info.get("matchFormat", match.get("matchType")),
+                "date": match.get("date", str(datetime.utcnow().date())),
+                "dateTimeGMT": match.get("dateTimeGMT", str(datetime.utcnow())),
                 "teams": match.get("teams", []),
-                "score": match.get("score", []),
+                "score": match.get("matchScore", match.get("score", [])),
                 "updatedAt": datetime.utcnow()
             }
 

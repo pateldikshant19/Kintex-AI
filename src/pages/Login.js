@@ -1,14 +1,62 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ArrowLeft, Trophy, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSession } from '../context/SessionContext';
 
 const Login = () => {
-    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [formData, setFormData] = useState({ email: '', password: '', leagueId: '', teamId: '' });
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+    const [leagues, setLeagues] = useState([]);
+    const [teams, setTeams] = useState([]);
+    
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { setSession } = useSession();
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [leaguesRes, teamsRes] = await Promise.all([
+                    fetch(`${process.env.REACT_APP_API_URL}/public/leagues`),
+                    fetch(`${process.env.REACT_APP_API_URL}/public/teams`)
+                ]);
+                if (leaguesRes.ok && teamsRes.ok) {
+                    const fetchedLeagues = await leaguesRes.json();
+                    setLeagues(fetchedLeagues);
+                    setTeams(await teamsRes.json());
+                    
+                    // Pre-select an active league if possible
+                    if (fetchedLeagues.length > 0) {
+                        const activeLeague = fetchedLeagues.find(l => isLeagueActive(l)) || fetchedLeagues[0];
+                        setFormData(prev => ({ ...prev, leagueId: activeLeague.leagueId }));
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to load initial data", err);
+            }
+        };
+        fetchData();
+    }, []);
+
+    const isLeagueActive = (league) => {
+        if (!league) return false;
+        // Fix for international series matching
+        if (league.seriesType && league.seriesType.toLowerCase() === 'international') return true;
+        if (league.name && league.name.toLowerCase().includes('international')) return true;
+        if (!league.startDate || !league.endDate) return true;
+        
+        const now = new Date();
+        const start = new Date(league.startDate);
+        const end = new Date(league.endDate);
+        
+        // access starts 21 days before and ends 21 days after
+        const accessStart = new Date(start.getTime() - 21 * 24 * 60 * 60 * 1000);
+        const accessEnd = new Date(end.getTime() + 21 * 24 * 60 * 60 * 1000);
+        
+        return now >= accessStart && now <= accessEnd;
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,12 +66,32 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const selectedLeague = leagues.find(l => l.leagueId === formData.leagueId);
+            
+            if (selectedLeague && !isLeagueActive(selectedLeague)) {
+                setError("Access Denied: Selected league is currently inactive. Access is only available ±21 days around the tournament.");
+                return;
+            }
+
             const user = await login(formData.email, formData.password);
+            
+            // Set session context after successful login
+            if (user.role === 'analyst' || user.role === 'manager') {
+                 setSession(formData.leagueId, formData.teamId);
+            } else {
+                 setSession(null, null);
+            }
+
             navigate('/home', { replace: true });
         } catch (err) {
             setError(err.message);
         }
     };
+
+    const filteredTeams = teams.filter(t => t.leagueIds && t.leagueIds.includes(formData.leagueId));
+
+    const inputClass = "w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm";
+    const selectClass = "w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm appearance-none";
 
     return (
         <div className="min-h-screen bg-[#f4f4f6] dark:bg-[#0a0a0c] flex items-center justify-center px-4 py-16 relative overflow-hidden">
@@ -81,6 +149,50 @@ const Login = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        
+                        {/* League Selection */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Competition Context</label>
+                            <div className="relative">
+                                <Trophy className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <select 
+                                    name="leagueId" 
+                                    value={formData.leagueId} 
+                                    onChange={handleChange} 
+                                    className={selectClass}
+                                    required
+                                >
+                                    <option value="" disabled>-- Select Competition --</option>
+                                    {leagues.map(l => (
+                                        <option key={l.leagueId} value={l.leagueId}>
+                                            {l.name} {isLeagueActive(l) ? '' : '(Inactive)'}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Team Selection */}
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Franchise Account</label>
+                            <div className="relative">
+                                <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <select 
+                                    name="teamId" 
+                                    value={formData.teamId} 
+                                    onChange={handleChange} 
+                                    className={selectClass}
+                                    required
+                                >
+                                    <option value="" disabled>-- Select Team --</option>
+                                    {filteredTeams.map(t => (
+                                        <option key={t.teamId} value={t.teamId}>{t.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Email */}
                         <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Email Address</label>
                             <div className="relative">
@@ -90,13 +202,14 @@ const Login = () => {
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+                                    className={inputClass}
                                     placeholder="athlete@kinetix.ai"
                                     required
                                 />
                             </div>
                         </div>
 
+                        {/* Password */}
                         <div>
                             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Password</label>
                             <div className="relative">
@@ -108,7 +221,7 @@ const Login = () => {
                                     onChange={handleChange}
                                     onFocus={() => setIsPasswordFocused(true)}
                                     onBlur={() => setIsPasswordFocused(false)}
-                                    className="w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
+                                    className={inputClass}
                                     placeholder="••••••••••"
                                     required
                                 />

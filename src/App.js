@@ -14,6 +14,7 @@ import './styles/App.css';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
+import { SessionProvider } from './context/SessionContext';
 import ProtectedRoute from './components/ProtectedRoute';
 
 import Landing from './pages/Landing';
@@ -34,19 +35,21 @@ function App() {
 
   return (
     <AuthProvider>
-      <ThemeProvider>
-        <Router>
-          <AnalyticsTracker />
-          <Routes>
-            <Route path="/" element={<Gateway />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/system-admin" element={<AdminAnalytics />} />
-            <Route path="/hub/*" element={<PublicHubApp />} />
-            <Route path="/*" element={<MainLayout />} />
-          </Routes>
-        </Router>
-      </ThemeProvider>
+      <SessionProvider>
+        <ThemeProvider>
+          <Router>
+            <AnalyticsTracker />
+            <Routes>
+              <Route path="/" element={<Gateway />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/system-admin" element={<AdminAnalytics />} />
+              <Route path="/hub/*" element={<PublicHubApp />} />
+              <Route path="/*" element={<MainLayout />} />
+            </Routes>
+          </Router>
+        </ThemeProvider>
+      </SessionProvider>
     </AuthProvider>
   );
 }

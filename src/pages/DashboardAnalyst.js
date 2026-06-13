@@ -9,10 +9,12 @@ import {
     Eye, ShieldAlert, CheckCircle2, AlertTriangle 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSession } from '../context/SessionContext';
 import DashboardChart from '../components/DashboardChart';
 
 const DashboardAnalyst = () => {
     const { user } = useAuth();
+    const { selectedLeagueId, selectedTeamId } = useSession();
     const [players, setPlayers] = useState([]);
     const [chartData, setChartData] = useState([65, 78, 72, 85, 82, 90, 88, 95]);
     const [loading, setLoading] = useState(true);
@@ -46,7 +48,12 @@ const DashboardAnalyst = () => {
         const fetchInsights = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch(`${process.env.REACT_APP_API_URL}/analytics/performance?limit=10`, {
+                
+                let queryStr = '?limit=10';
+                if (selectedTeamId) queryStr += `&teamId=${selectedTeamId}`;
+                if (selectedLeagueId) queryStr += `&leagueId=${selectedLeagueId}`;
+
+                const res = await fetch(`${process.env.REACT_APP_API_URL}/analytics/performance${queryStr}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
@@ -137,13 +144,15 @@ const DashboardAnalyst = () => {
                 socketRef.current.disconnect();
             }
         };
-    }, []);
+    }, [API_URL, selectedLeagueId, selectedTeamId]);
 
     // Redraw heatmap on data update
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (deliveries.length > 0 && activeTab === 'spatial' && canvasSubTab === 'wheel') {
             drawScoringHeatmap();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deliveries, activeTab, canvasSubTab]);
 
     // Radial Gradient Scoring Heatmap (HTML5 Canvas)
@@ -162,14 +171,11 @@ const DashboardAnalyst = () => {
             const dist = del.wagonLength * 1.35;
             const x = centerX + Math.cos(angleRad) * dist;
             const y = centerY + Math.sin(angleRad) * dist;
-
-            const grad = ctx.createRadialGradient(x, y, 2, x, y, 35);
-            const alpha = del.runs === 6 ? 0.65 : del.runs === 4 ? 0.5 : 0.35;
-            const heatColor = del.runs === 6 ? '239, 68, 68' : del.runs === 4 ? '245, 158, 11' : '59, 130, 246';
-
-            grad.addColorStop(0, `rgba(${heatColor}, ${alpha})`);
-            grad.addColorStop(1, `rgba(${heatColor}, 0)`);
-
+            
+            const grad = ctx.createRadialGradient(x, y, 0, x, y, 35);
+            grad.addColorStop(0, del.runs === 4 || del.runs === 6 ? 'rgba(59,130,246,0.8)' : 'rgba(16,185,129,0.8)');
+            grad.addColorStop(1, 'rgba(59,130,246,0)');
+            
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.arc(x, y, 35, 0, Math.PI * 2);

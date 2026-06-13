@@ -7,18 +7,29 @@ router.use(auth);
 
 router.get('/', async (req, res) => {
   try {
-    let filter = {};
+    // Enforce active=true and retired=false globally for this route
+    let filter = { active: true, retired: false };
 
     if (req.user.role === 'player' || req.user.role === 'athlete') {
       // Players can only see their own data
-      filter = { email: req.user.email };
+      filter.email = req.user.email;
     } else if (req.user.role === 'manager' || req.user.role === 'analyst') {
-      // Managers and Analysts see all players in their team
-      if (req.user.teamName) {
-        filter = { teamName: { $regex: new RegExp(`^${req.user.teamName}$`, 'i') } };
-      } else {
-        // Fallback to sport if no team is set
-        filter = { sport: req.user.sport };
+      // Apply team / league filtering if provided via query params (SessionContext)
+      if (req.query.teamId) {
+        filter.currentTeamId = Number(req.query.teamId);
+      }
+      if (req.query.leagueId) {
+        // Find players whose activeLeagueIds array contains the selected league
+        filter.activeLeagueIds = Number(req.query.leagueId);
+      }
+      
+      // Fallback to user object if query params aren't passed (legacy compat)
+      if (!req.query.teamId && !req.query.leagueId) {
+          if (req.user.teamName) {
+            filter.teamName = { $regex: new RegExp(`^${req.user.teamName}$`, 'i') };
+          } else {
+            filter.sport = req.user.sport;
+          }
       }
     }
 

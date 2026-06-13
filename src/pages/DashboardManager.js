@@ -8,10 +8,12 @@ import {
     Cpu, RefreshCw, Sparkles, CheckCircle2, AlertTriangle, Eye, Video, BrainCircuit 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSession } from '../context/SessionContext';
 import DashboardChart from '../components/DashboardChart';
 
 const DashboardManager = () => {
     const { user } = useAuth();
+    const { selectedLeagueId, selectedTeamId } = useSession();
     const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState([70, 75, 72, 80, 85, 82, 90, 92]);
@@ -21,6 +23,7 @@ const DashboardManager = () => {
     const [match, setMatch] = useState(null);
     const [deliveries, setDeliveries] = useState([]);
     const [socketConnected, setSocketConnected] = useState(false);
+    // eslint-disable-next-line no-unused-vars
     const [liveLogs, setLiveLogs] = useState(["Telemetry: Booting Manager Command Center..."]);
 
     // AI/ML States for interactive simulation
@@ -59,7 +62,12 @@ const DashboardManager = () => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
-                const playerRes = await fetch(`${process.env.REACT_APP_API_URL}/players`, {
+                
+                let queryStr = '';
+                if (selectedTeamId) queryStr += `?teamId=${selectedTeamId}`;
+                if (selectedLeagueId) queryStr += queryStr ? `&leagueId=${selectedLeagueId}` : `?leagueId=${selectedLeagueId}`;
+
+                const playerRes = await fetch(`${process.env.REACT_APP_API_URL}/players${queryStr}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (playerRes.ok) {
@@ -168,7 +176,7 @@ const DashboardManager = () => {
                 socketRef.current.disconnect();
             }
         };
-    }, []);
+    }, [API_URL, selectedLeagueId, selectedTeamId]);
 
     // Simulate standard delivery
     const simulateNextBall = async () => {

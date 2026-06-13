@@ -1,0 +1,40 @@
+# Update Auth Flow and Series Data Collection
+
+We will implement a multi-level cascading selection process in the authentication pages and expand the backend data collection to include bi-lateral, domestic, and friendly series.
+
+## Proposed Changes
+
+### Backend: `server/scripts/collect_league_data.py`
+Currently, the script only hits the `/international` endpoint and saves `seriesType` as `None` because the API doesn't provide it in the format we expect.
+1. We will update the data collection script to infer the `seriesType` or `matchType` from the series name (e.g., if it contains "vs" or "Tour of", it's a Bi-lateral series; if it contains "Cup" or "Trophy", it's a Tournament).
+2. We will attempt to fetch data from `/series/v1/domestic` and `/series/v1/league` endpoints as well (if the API quota allows, as we are currently seeing some rate limiting `429`).
+
+#### [MODIFY] `server/scripts/collect_league_data.py`
+- Add robust string-parsing to assign a `matchCategory` (Bi-lateral, Tournament, League, Domestic).
+- Extend the API fetch logic to pull from multiple series endpoints if available.
+
+### Frontend: `src/pages/Login.js` & `src/pages/Signup.js`
+We will introduce a cascading dropdown menu system for a smoother user experience.
+
+1. **Dropdown 1: Match Category**
+   - Options: "International Bi-lateral", "International Tournament", "Domestic", "League", "Friendly".
+2. **Dropdown 2: Competition / Series**
+   - Options: Filtered dynamically based on the chosen Match Category.
+3. **Dropdown 3: Franchise / Team**
+   - Options: Filtered dynamically based on the chosen Competition.
+
+#### [MODIFY] `src/pages/Login.js`
+- Add state for `selectedMatchCategory`.
+- Add the `<select>` dropdown for Match Category above the Competition context dropdown.
+- Update the filtering logic for the Competition dropdown.
+
+#### [MODIFY] `src/pages/Signup.js`
+- Replicate the exact same cascading dropdown logic as in `Login.js`.
+
+## Verification Plan
+
+### Automated/Manual Verification
+- Run `node server/scripts/collect_league_data.py` to populate MongoDB with categorized leagues.
+- Start the React app and navigate to `/login`.
+- Verify that selecting "International Bi-lateral" successfully populates the second dropdown with "IND vs AFG" type series.
+- Verify that selecting a specific bi-lateral series correctly populates the final team dropdown.

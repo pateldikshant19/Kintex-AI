@@ -9,15 +9,27 @@ const router = express.Router();
 router.use(auth);
 
 // Helper for Role-Based Sport Filtering
-const getSportFilter = (user) => {
-  if (user.role === 'analyst') return {}; // Analysts see all
-  return { sport: user.sport }; // Managers/Athletes see their sport
+const getSportFilter = (req) => {
+  const user = req.user;
+  let filter = { active: true, retired: false };
+  
+  if (user.role === 'analyst' || user.role === 'manager') {
+      if (req.query.teamId) filter.currentTeamId = Number(req.query.teamId);
+      if (req.query.leagueId) filter.activeLeagueIds = Number(req.query.leagueId);
+      
+      if (!req.query.teamId && !req.query.leagueId && user.teamName) {
+         filter.teamName = { $regex: new RegExp(`^${user.teamName}$`, 'i') };
+      }
+  } else if (user.role === 'player' || user.role === 'athlete') {
+      filter.email = user.email;
+  }
+  return filter;
 };
 
 // GET / - Aggregated Analytics (Legacy + New)
 router.get('/', async (req, res) => {
   try {
-    const filter = getSportFilter(req.user);
+    const filter = getSportFilter(req);
     const players = await Player.find(filter);
 
     // Legacy aggregations for dashboard
@@ -39,16 +51,22 @@ router.get('/', async (req, res) => {
 // GET /performance - Detailed Performance Records (New AI Data)
 router.get('/performance', async (req, res) => {
   try {
-    const filter = getSportFilter(req.user);
+    const filter = getSportFilter(req);
     const { limit = 50, page = 1 } = req.query;
 
-    const performances = await Performance.find(filter)
+    let perfFilter = {};
+    if (filter.currentTeamId || filter.activeLeagueIds || filter.email || filter.teamName) {
+        const players = await Player.find(filter).select('_id');
+        perfFilter.playerId = { $in: players.map(p => p._id) };
+    }
+
+    const performances = await Performance.find(perfFilter)
       .sort({ date: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit))
       .populate('playerId', 'name position'); // Populate player details
 
-    const total = await Performance.countDocuments(filter);
+    const total = await Performance.countDocuments(perfFilter);
 
     res.json({
       data: performances,
@@ -62,15 +80,24 @@ router.get('/performance', async (req, res) => {
 // GET /matches - Match Predictions & Analytics (New CSV Data)
 router.get('/matches', async (req, res) => {
   try {
-    const filter = getSportFilter(req.user);
+    const filter = getSportFilter(req);
     const { limit = 50, page = 1 } = req.query;
 
-    const matches = await MatchAnalytics.find(filter)
+    let matchFilter = {};
+    // MatchAnalytics doesn't have playerId, but it might have teamId. 
+    // Wait, MatchAnalytics model doesn't have teamId either, it only has sport, minuteOrPhase, etc.
+    // We'll leave matchFilter empty for now or map if we add teamId to MatchAnalytics later.
+    // For now, managers and analysts can just see all matches or filter by sport if we add it to the filter object.
+    if (req.user.sport) {
+       matchFilter.sport = req.user.sport;
+    }
+
+    const matches = await MatchAnalytics.find(matchFilter)
       .sort({ timestamp: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
 
-    const total = await MatchAnalytics.countDocuments(filter);
+    const total = await MatchAnalytics.countDocuments(matchFilter);
 
     res.json({
       data: matches,

@@ -1,20 +1,27 @@
 const mongoose = require('mongoose');
 
 const playerSchema = new mongoose.Schema({
+  // Basic Public Data (Cricbuzz RapidAPI)
+  playerId: { type: String, unique: true }, // From RapidAPI
   name: { type: String, required: true },
-  email: { type: String, unique: true, sparse: true }, // Optional link to User account
-  sport: { type: String, required: true },
-  teamName: { type: String, required: true },
-  managerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  position: { type: String, required: true },
-  jerseyNumber: Number,
-  dateOfBirth: Date,
+  sport: { type: String, default: 'Cricket' },
+  teamId: { type: Number }, // Link to Team schema
+  teamName: { type: String }, // Keep for fallback
+  position: { type: String }, // Playing role
+  role: { type: String }, // Playing role
+  battingStyle: { type: String },
+  bowlingStyle: { type: String },
+  country: { type: String },
+  imageId: { type: Number }, // Cricbuzz image ID
   bio: String,
-  playingStyle: String,
-  records: [String],
-  debutSeason: String,
-  internationalTeam: String,
-  weaknesses: [String],
+  records: [{ type: String }], // Real achievements/rankings
+  active: { type: Boolean, default: true },
+  retired: { type: Boolean, default: false },
+  currentTeamId: { type: Number },
+  activeLeagueIds: [{ type: Number }], // Supports multiple leagues simultaneously
+  updatedAt: { type: Date, default: Date.now },
+
+  // Pro Features (Manager/Analyst Data)
   physicalStats: {
     height: Number,
     weight: Number,
@@ -27,7 +34,7 @@ const playerSchema = new mongoose.Schema({
   }],
   injuryHistory: [{
     date: Date,
-    type: String,
+    type: { type: String },
     severity: String,
     recoveryTime: Number
   }],
@@ -35,7 +42,7 @@ const playerSchema = new mongoose.Schema({
     date: Date,
     duration: Number,
     intensity: String,
-    type: String
+    type: { type: String }
   }]
 }, { timestamps: true });
 

@@ -6,6 +6,8 @@ const liveMatchSchema = new mongoose.Schema({
     status: String,
     venue: String,
     matchType: String,
+    leagueId: { type: Number },
+    seriesName: String,
     date: String,
     dateTimeGMT: String,
     teams: [String],

@@ -25,7 +25,7 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [API_URL]);
 
   if (loading) return (
     <div className="flex justify-center items-center h-64">

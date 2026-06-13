@@ -6,14 +6,32 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
     const [matches, setMatches] = useState([]);
 
     useEffect(() => {
-        setMatches([
-            { id: 'm1', sport: 'Cricket', teamA: 'Eagles', teamB: 'Titans', score: '142/3 (16.4)', phase: 'Live • 1st Innings', momentum: 0.68, predicted: 'Next Boundary' },
-            { id: 'm2', sport: 'Football', teamA: 'TechRun', teamB: 'Ligasport', score: '2 - 1', phase: 'Live • 74 min', momentum: 0.42, predicted: 'Goal Expected' },
-            { id: 'm3', sport: 'Basketball', teamA: 'Knicks', teamB: 'Lakers', score: '98 - 102', phase: 'Live • 4th Qtr', momentum: 0.55, predicted: '3-Pointer' },
-            { id: 'm4', sport: 'Tennis', teamA: 'Alcaraz', teamB: 'Djokovic', score: '6-4, 3-2', phase: 'Live • 2nd Set', momentum: 0.49, predicted: 'Break of Serve' },
-            { id: 'm5', sport: 'Cricket', teamA: 'Warriors', teamB: 'Kings', score: 'Upcoming', phase: 'Starts in 2h', momentum: 0.5, predicted: 'N/A' }
-        ]);
+        const fetchMatches = async () => {
+            try {
+                const res = await fetch('http://localhost:3001/api/public/matches');
+                const data = await res.json();
+                
+                if (data && data.length > 0) {
+                    const mapped = data.map(m => ({
+                        id: m.id,
+                        sport: 'Cricket',
+                        teamA: m.name ? m.name.split(' vs ')[0] : 'Team A',
+                        teamB: m.name && m.name.includes(' vs ') ? m.name.split(' vs ')[1].split(',')[0] : 'Team B',
+                        score: m.score && m.score.length > 0 ? `${m.score[0].r}/${m.score[0].w} (${m.score[0].o})` : 'Starts Soon',
+                        phase: m.status || 'Upcoming',
+                        momentum: Math.random() * 0.8 + 0.1, // Simulated momentum
+                        predicted: 'Action Expected'
+                    }));
+                    setMatches(mapped);
+                } else {
+                    setMatches([]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch matches", err);
+            }
+        };
 
+        fetchMatches();
         const interval = setInterval(() => {
             setMatches(prev => prev.map(m => ({
                 ...m,
