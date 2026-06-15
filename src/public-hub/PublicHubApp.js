@@ -4,7 +4,7 @@ import LiveMatchPulseCenter from './LiveMatchPulseCenter';
 import MatchCanvas from './MatchCanvas';
 import PlayerEncyclopedia from './PlayerEncyclopedia';
 import PredictThePlay from './PredictThePlay';
-import { Target, Users, BookMarked, Radio, Menu, X, ArrowLeft } from 'lucide-react';
+import { Target, Users, BookMarked, Radio, Menu, X, ArrowLeft, LayoutDashboard, Calendar, FileText, Search, Bell, Settings } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 
 const PublicHubApp = () => {
@@ -19,105 +19,139 @@ const PublicHubApp = () => {
         window.scrollTo(0, 0);
     };
 
-    const sections = [
-        { id: 'pulse', label: 'Match Pulse', icon: <Radio size={15} /> },
-        { id: 'canvas', label: 'Match Canvas', icon: <Target size={15} /> },
-        { id: 'player', label: 'Player Encyclopedia', icon: <BookMarked size={15} /> },
-        { id: 'simulator', label: 'Predict the Play', icon: <Users size={15} /> }
+    const sidebarSections = [
+        { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+        { id: 'pulse', label: 'Match Center', icon: <Radio size={20} /> },
+        { id: 'canvas', label: 'Analytics', icon: <Target size={20} /> },
+        { id: 'player', label: 'Teams', icon: <Users size={20} /> },
+        { id: 'calendar', label: 'Calendar', icon: <Calendar size={20} /> },
+        { id: 'simulator', label: 'Reports', icon: <FileText size={20} /> }
     ];
 
     return (
-        <div className="min-h-screen bg-[#f4f4f6] dark:bg-[#0a0a0c] text-slate-900 dark:text-white transition-colors duration-300 relative">
+        <div className="min-h-screen bg-[#f4f4f6] dark:bg-[#0a0a0c] text-slate-900 dark:text-white transition-colors duration-300 flex font-sans">
+            
+            {/* ===== LEFT SIDEBAR ===== */}
+            <aside className="w-16 md:w-20 fixed left-0 top-0 bottom-0 bg-white dark:bg-[#13131a] border-r border-slate-200 dark:border-[#1e1e2a] flex flex-col items-center py-6 z-[100]">
+                <div className="w-10 h-10 mb-8 cursor-pointer flex-shrink-0" onClick={() => navigateTo('pulse')}>
+                    <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                </div>
 
-            {/* ===== NAVBAR ===== */}
-            <nav className="fixed top-0 left-0 right-0 z-[100] h-14 flex items-center px-6 bg-white/80 dark:bg-[#0a0a0c]/80 backdrop-blur-xl transition-colors">
-                {/* Accent line */}
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent pointer-events-none"></div>
-
-                <div className="max-w-7xl mx-auto w-full flex justify-between items-center">
-                    {/* Brand */}
-                    <div
-                        onClick={() => navigateTo('pulse')}
-                        className="flex items-center gap-2.5 cursor-pointer group"
-                    >
-                        <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] flex items-center justify-center overflow-hidden p-1.5 shadow-sm">
-                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-                        </div>
-                        <div>
-                            <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white uppercase">
-                                KINETIX<span className="text-blue-500 font-light ml-1 tracking-widest text-xs">HUB</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Desktop Nav Tabs */}
-                    <div className="hidden lg:flex items-center gap-1 bg-slate-100 dark:bg-[#13131a] rounded-xl p-1 border border-slate-200 dark:border-[#1e1e2a]">
-                        {sections.map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => navigateTo(s.id)}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${
-                                    activeSection === s.id
-                                        ? 'bg-white dark:bg-[#0a0a0c] text-blue-500 shadow-sm border border-slate-200 dark:border-[#1e1e2a]'
-                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                                }`}
-                            >
-                                <span className={activeSection === s.id ? 'text-blue-500' : 'text-slate-400'}>{s.icon}</span>
-                                {s.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Right */}
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:flex items-center gap-1.5">
-                            <div className="live-dot"></div>
-                            <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Pro Bridge Active</span>
-                        </div>
-                        <div className="w-px h-5 bg-slate-200 dark:bg-[#1e1e2a]"></div>
-                        <ThemeToggle />
+                <div className="flex flex-col gap-6 flex-grow w-full items-center">
+                    {sidebarSections.map(s => (
                         <button
-                            className="lg:hidden p-2 rounded-lg border border-slate-200 dark:border-[#1e1e2a] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#13131a] transition-all"
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            key={s.id}
+                            onClick={() => navigateTo(s.id)}
+                            className={`w-10 h-10 rounded-xl flex justify-center items-center transition-all group relative ${
+                                activeSection === s.id
+                                    ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10'
+                                    : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                            }`}
                         >
-                            {isMenuOpen ? <X size={16} /> : <Menu size={16} />}
+                            {activeSection === s.id && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-emerald-500 rounded-r-full" />
+                            )}
+                            {s.icon}
                         </button>
-                    </div>
+                    ))}
                 </div>
-            </nav>
 
-            {/* Mobile Menu */}
-            {isMenuOpen && (
-                <div className="fixed inset-0 z-[110] bg-white dark:bg-[#0a0a0c] lg:hidden flex flex-col pt-16">
-                    <div className="p-4 space-y-1 border-t border-slate-100 dark:border-[#1e1e2a] mt-14">
-                        {sections.map(s => (
-                            <button
-                                key={s.id}
-                                onClick={() => navigateTo(s.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold uppercase tracking-widest text-left transition-all ${
-                                    activeSection === s.id
-                                        ? 'bg-blue-500/10 border border-blue-500/20 text-blue-500'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#13131a]'
-                                }`}
+                <div className="flex flex-col gap-6 w-full items-center mb-4">
+                    <ThemeToggle />
+                    <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                        <Settings size={20} />
+                    </button>
+                </div>
+            </aside>
+
+            {/* ===== MAIN CONTAINER ===== */}
+            <div className="flex-1 ml-16 md:ml-20 flex flex-col min-h-screen relative">
+                
+                {/* ===== TOP NAVBAR ===== */}
+                <nav className="sticky top-0 z-[90] h-20 flex items-center px-6 bg-white dark:bg-[#0a0a0c] border-b border-slate-200 dark:border-[#1e1e2a] transition-colors">
+                    <div className="w-full flex justify-between items-center">
+                        {/* Brand / Title Area */}
+                        <div className="flex items-center gap-8">
+                            <div
+                                onClick={() => navigateTo('pulse')}
+                                className="flex items-center gap-2 cursor-pointer group"
                             >
-                                <span>{s.icon}</span> {s.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
+                                <span className="text-lg font-black tracking-tight text-slate-900 dark:text-white uppercase">
+                                    KINETIX<span className="text-emerald-500 font-light ml-1 tracking-widest text-sm">HUB</span>
+                                </span>
+                            </div>
 
-            {/* ===== MAIN CONTENT ===== */}
-            <main className="pt-20 pb-16 px-4">
-                <div className="max-w-7xl mx-auto">
+                            {/* Desktop Nav Tabs */}
+                            <div className="hidden lg:flex items-center gap-6">
+                                {sidebarSections.map(s => (
+                                    <button
+                                        key={`top-${s.id}`}
+                                        onClick={() => navigateTo(s.id)}
+                                        className={`pb-1 text-[13px] font-bold uppercase tracking-wider transition-all border-b-2 ${
+                                            activeSection === s.id
+                                                ? 'text-slate-900 dark:text-white border-emerald-500'
+                                                : 'text-slate-400 border-transparent hover:text-slate-600 dark:hover:text-slate-200'
+                                        }`}
+                                    >
+                                        {s.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Right Area */}
+                        <div className="flex items-center gap-5">
+                            <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                <Search size={20} />
+                            </button>
+                            <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative">
+                                <Bell size={20} />
+                                <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-[#0a0a0c]"></span>
+                            </button>
+                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 ml-2">
+                                DK
+                            </div>
+                            <button
+                                className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#13131a] transition-all"
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            >
+                                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                            </button>
+                        </div>
+                    </div>
+                </nav>
+
+                {/* Mobile Menu */}
+                {isMenuOpen && (
+                    <div className="fixed inset-0 z-[110] bg-white dark:bg-[#0a0a0c] lg:hidden flex flex-col pt-20 pl-16">
+                        <div className="p-4 space-y-1">
+                            {sidebarSections.map(s => (
+                                <button
+                                    key={`mob-${s.id}`}
+                                    onClick={() => navigateTo(s.id)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-bold uppercase tracking-widest text-left transition-all ${
+                                        activeSection === s.id
+                                            ? 'bg-emerald-500/10 text-emerald-500'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-[#13131a]'
+                                    }`}
+                                >
+                                    <span>{s.icon}</span> {s.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* ===== MAIN CONTENT AREA ===== */}
+                <main className="flex-1 p-6 md:p-8">
                     {/* Back button */}
                     {activeSection === 'canvas' && selectedMatchId && (
                         <button
                             onClick={() => navigateTo('pulse')}
-                            className="flex items-center gap-1.5 mb-5 text-[10px] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white uppercase tracking-widest transition-colors group"
+                            className="flex items-center gap-1.5 mb-5 text-[11px] font-bold text-slate-400 hover:text-slate-900 dark:hover:text-white uppercase tracking-widest transition-colors group"
                         >
-                            <ArrowLeft size={13} className="group-hover:-translate-x-1 transition-transform" />
-                            Back to Pulse Center
+                            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+                            Back to Match Center
                         </button>
                     )}
 
@@ -126,51 +160,13 @@ const PublicHubApp = () => {
                         {activeSection === 'canvas' && <MatchCanvas matchId={selectedMatchId || 'm1'} />}
                         {activeSection === 'player' && <PlayerEncyclopedia />}
                         {activeSection === 'simulator' && <PredictThePlay />}
+                        
+                        {/* Placeholders for new sections */}
+                        {activeSection === 'dashboard' && <div className="text-center p-20 text-slate-400">Dashboard View (Coming Soon)</div>}
+                        {activeSection === 'calendar' && <div className="text-center p-20 text-slate-400">Calendar View (Coming Soon)</div>}
                     </div>
-                </div>
-            </main>
-
-            {/* ===== FOOTER ===== */}
-            <footer className="relative bg-white dark:bg-[#13131a] py-10">
-                <div className="absolute top-0 left-0 right-0 k-accent-line"></div>
-                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-8">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-white dark:bg-[#0a0a0c] border border-slate-200 dark:border-[#1e1e2a] rounded-xl p-2 shadow-sm overflow-hidden">
-                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-                        </div>
-                        <div>
-                            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">KINETIX</span>
-                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Public Intelligence Bridge</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-16 text-[10px]">
-                        <div>
-                            <h5 className="font-black text-slate-400 uppercase tracking-widest mb-3">Resources</h5>
-                            <ul className="space-y-2 font-bold text-slate-500 dark:text-slate-500">
-                                <li><a href="#" className="hover:text-blue-500 transition-colors">API Docs</a></li>
-                                <li><a href="#" className="hover:text-blue-500 transition-colors">Methodology</a></li>
-                                <li><a href="#" className="hover:text-blue-500 transition-colors">Partners</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h5 className="font-black text-slate-400 uppercase tracking-widest mb-3">Platform</h5>
-                            <ul className="space-y-2 font-bold text-slate-500 dark:text-slate-500">
-                                <li><Link to="/home" className="hover:text-blue-500 transition-colors">PRO PORTAL</Link></li>
-                                <li><a href="#" className="hover:text-blue-500 transition-colors">Simulator Rankings</a></li>
-                                <li><a href="#" className="hover:text-blue-500 transition-colors">Legal</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative max-w-7xl mx-auto px-4 pt-8 mt-8 text-center">
-                    <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-800 to-transparent opacity-30"></div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-                        © 2026 Kinetix AI Sports Ecosystem. All Data Federated In Real-Time.
-                    </p>
-                </div>
-            </footer>
+                </main>
+            </div>
         </div>
     );
 };
