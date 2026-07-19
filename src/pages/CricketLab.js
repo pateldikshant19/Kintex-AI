@@ -1,19 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Stage, Layer, Circle, Line, Rect, Text as KonvaText } from 'react-konva';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line as RechartsLine } from 'recharts';
 import { io } from 'socket.io-client';
-import { Play, Pause, RefreshCw, Cpu, ShieldAlert, Sparkles, User, Activity, Zap, CheckCircle2, AlertTriangle, Eye, Video } from 'lucide-react';
+import { Play, Pause, RefreshCw, Cpu, ShieldAlert, Sparkles, User, Activity, Zap, CheckCircle2, AlertTriangle, Eye, Video, Thermometer, ChevronRight, FileText, ActivitySquare, BrainCircuit, History, Timer } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const CricketLab = () => {
+    const { user } = useAuth();
     // -------------------------------------------------------------
     // STATES
     // -------------------------------------------------------------
     const [match, setMatch] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('canvas'); // canvas, ai, cv, data
+    const [activeTab, setActiveTab] = useState('overview'); // Default to overview now
     const [canvasSubTab, setCanvasSubTab] = useState('wheel'); // wheel, pitch, field
     const [selectedFielder, setSelectedFielder] = useState(null);
     const [deliveries, setDeliveries] = useState([]);
+    
+    // Medical Intel States
+    const [players, setPlayers] = useState([]);
+    const [selectedPlayerId, setSelectedPlayerId] = useState('');
+    const [intel, setIntel] = useState(null);
+    const [intelLoading, setIntelLoading] = useState(false);
+    
+    const selectedPlayer = players.find(p => p._id === selectedPlayerId);
+
     
     // AI/ML States
     const [aiTasks, setAiTasks] = useState({
@@ -50,19 +61,20 @@ const CricketLab = () => {
     const heatmapCanvasRef = useRef(null);
     const socketRef = useRef(null);
     
-    const API_URL = `${process.env.REACT_APP_API_URL}/cricket`;
+    const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/cricket`;
 
     // -------------------------------------------------------------
     // REAL-TIME SOCKET.IO INTEGRATION
     // -------------------------------------------------------------
     useEffect(() => {
         // Connect to express socket backend
-        socketRef.current = io(process.env.REACT_APP_SOCKET_URL);
+        socketRef.current = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001');
 
         socketRef.current.on('connect', () => {
             setSocketConnected(true);
-            // Room join is handled dynamically inside fetchMatchTelemetry
         });
+
+        fetchMatchTelemetry();
 
         socketRef.current.on('disconnect', () => {
             setSocketConnected(false);
@@ -124,18 +136,84 @@ const CricketLab = () => {
         }
     }, [deliveries, activeTab, canvasSubTab]);
 
-    const fetchMatchTelemetry = async () => {
+    async function fetchPlayers() {
         try {
-            // First get all live matches
-            const matchesRes = await fetch(`${API_URL}/matches`);
-            if (matchesRes.ok) {
-                const matchesData = await matchesRes.json();
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_URL.replace('/cricket', '/players')}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
                 
-                if (matchesData && matchesData.length > 0) {
-                    // Take the first live match
-                    const liveMatchId = matchesData[0].id;
-                    
-                    // Then fetch its specific telemetry
+                let filteredData = data;
+                if (user && (user.role === 'manager' || user.role === 'analyst')) {
+                    const userTeam = user.teamName;
+                    if (userTeam) {
+                        filteredData = data.filter(p => p.teamName === userTeam);
+                    } else if (user.name && user.name.includes('India')) {
+                        // Fallback for "Team India Manager"
+                        filteredData = data.filter(p => p.teamName === 'India');
+                    }
+                }
+                
+                setPlayers(filteredData);
+                if (filteredData.length > 0) {
+                    setSelectedPlayerId(filteredData[0]._id);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to load players:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (user) {
+            fetchPlayers();
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
+
+    useEffect(() => {
+        if (!selectedPlayerId) return;
+        const fetchIntel = async () => {
+            setIntelLoading(true);
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch(`${API_URL.replace('/cricket', '')}/injury-intelligence/profile?playerId=${selectedPlayerId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setIntel(data.injuryIntelligence);
+                }
+            } catch (err) {
+                console.error("Failed to load medical intel:", err);
+            } finally {
+                setIntelLoading(false);
+            }
+        };
+        fetchIntel();
+    }, [selectedPlayerId, API_URL]);
+
+    async function fetchMatchTelemetry() {
+        try {
+            let liveMatchId = null;
+            let success = false;
+            
+            try {
+                const matchesRes = await fetch(`${API_URL}/matches`);
+                if (matchesRes.ok) {
+                    const matchesData = await matchesRes.json();
+                    if (matchesData && matchesData.length > 0) {
+                        liveMatchId = matchesData[0].id;
+                    }
+                }
+            } catch (err) {
+                console.warn("Could not fetch live matches list, falling back.", err);
+            }
+            
+            if (liveMatchId) {
+                try {
                     const res = await fetch(`${API_URL}/match/${liveMatchId}`);
                     if (res.ok) {
                         const data = await res.json();
@@ -146,15 +224,20 @@ const CricketLab = () => {
                             socketRef.current.emit('joinMatch', liveMatchId);
                             setLiveLogs(prev => [...prev, `Websocket: Joined live room for [${liveMatchId}] - Live Telemetry Active`]);
                         }
+                        success = true;
                     }
-                } else {
-                    // Fallback if no live matches exist in database
-                    const res = await fetch(`${API_URL}/match/c1`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        setMatch(data);
-                        setDeliveries(data.deliveries || []);
-                    }
+                } catch (err) {
+                    console.warn(`Could not fetch data for match ${liveMatchId}`, err);
+                }
+            }
+            
+            if (!success) {
+                // Fallback if no live matches exist in database, DB connection failed, or returned 404
+                const res = await fetch(`${API_URL}/match/c1`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMatch(data);
+                    setDeliveries(data.deliveries || []);
                 }
             }
         } catch (err) {
@@ -369,42 +452,77 @@ const CricketLab = () => {
                 </div>
             </div>
 
-            {/* LIVE PULSE SCOREBOARD */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
-                <div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Live Match</span>
-                    <h4 className="text-base font-black text-slate-900 dark:text-white leading-none mb-1.5">{match.matchName}</h4>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{match.venue}</span>
+            {/* TOP SECTION: SELECTORS */}
+            <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-4">
+                <div className="flex-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Player</label>
+                    <select 
+                        value={selectedPlayerId}
+                        onChange={(e) => setSelectedPlayerId(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-[#1e1e2a] text-slate-800 dark:text-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition-colors"
+                    >
+                        {players.map(p => (
+                            <option key={p._id} value={p._id}>{p.name} - {p.role}</option>
+                        ))}
+                    </select>
                 </div>
-                <div className="border-l border-slate-100 dark:border-[#1e1e2a] pl-5">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">SCOREBOARD</span>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white leading-none k-mono mb-1">{match.stats.runs} / <span className="text-blue-500">{match.stats.wickets}</span></h2>
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">OVERS: {match.stats.overs}</span>
+                <div className="flex-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Select Match Context</label>
+                    <select className="w-full bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-[#1e1e2a] text-slate-800 dark:text-slate-200 rounded-xl px-4 py-2.5 outline-none focus:border-blue-500 transition-colors">
+                        <option>Current Active Match</option>
+                        <option>Upcoming Match</option>
+                    </select>
                 </div>
-                <div className="border-l border-slate-100 dark:border-[#1e1e2a] pl-5">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">BATSMAN (ON STRIKE)</span>
-                    <h4 className="text-base font-black text-emerald-500 leading-none mb-1.5">{match.stats.batsmen[0].name}</h4>
-                    <span className="text-xs font-black text-slate-950 dark:text-slate-200 k-mono">{match.stats.batsmen[0].runs}* <span className="text-[10px] text-slate-400 font-medium">({match.stats.batsmen[0].balls}b) • SR: {match.stats.batsmen[0].strikeRate}</span></span>
-                </div>
-                <div className="border-l border-slate-100 dark:border-[#1e1e2a] pl-5">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">LIVE REAL-TIME ODDS</span>
-                    <div className="flex items-center gap-2 mb-1">
-                        <Cpu size={14} className="text-blue-500" />
-                        <span className="text-xl font-black text-blue-500 k-mono">{(aiTasks.win.prob * 100).toFixed(0)}%</span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">WIN PROB</span>
-                    </div>
-                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest block">FATIGUE: {(aiTasks.fatigue.index * 100).toFixed(0)}% (LOW)</span>
+                <div className="flex items-end pb-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1"><RefreshCw size={12}/> Last updated: Just now</span>
                 </div>
             </div>
 
             {/* TAB SELECTORS */}
-            <div className="flex border-b border-slate-200 dark:border-[#1e1e2a] pb-px">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">PLAYER PROFILE</span>
+                        {intel && intel.predictionDetails && intel.predictionDetails.isMockData && (
+                            <span className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-500/30 uppercase">Demo Data</span>
+                        )}
+                    </div>
+                    <h4 className="text-base font-black text-slate-900 dark:text-white leading-none mb-1.5">{selectedPlayer ? selectedPlayer.name : '...'}</h4>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{selectedPlayer ? selectedPlayer.teamName : '...'}</span>
+                </div>
+                <div className="border-l border-slate-100 dark:border-[#1e1e2a] pl-5">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">ROLE</span>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-none mb-1.5 mt-1">{selectedPlayer ? (selectedPlayer.role || 'Player') : '...'}</h2>
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{selectedPlayer ? selectedPlayer.country : ''}</span>
+                </div>
+                <div className="border-l border-slate-100 dark:border-[#1e1e2a] pl-5">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">INJURY STATUS</span>
+                    <h4 className="text-base font-black text-emerald-500 leading-none mb-1.5 mt-1">{intel ? intel.availabilityStatus : '...'}</h4>
+                    <span className="text-xs font-black text-slate-950 dark:text-slate-200 k-mono">
+                        {intel ? intel.riskLevel : '...'} <span className="text-[10px] text-slate-400 font-medium ml-1">Risk</span>
+                    </span>
+                </div>
+                <div className="border-l border-slate-100 dark:border-[#1e1e2a] pl-5">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">AI INTELLIGENCE</span>
+                    <div className="flex items-center gap-2 mb-1">
+                        <ShieldAlert size={14} className={intel?.riskScore > 50 ? "text-red-500" : "text-amber-500"} />
+                        <span className={`text-xl font-black k-mono ${intel?.riskScore > 50 ? "text-red-500" : "text-amber-500"}`}>{intel?.riskScore ? intel.riskScore : 0}%</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">INJURY RISK</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest block">FATIGUE: {intel?.riskScore ? (intel.riskScore * 0.8).toFixed(0) : 0}% ({intel?.riskScore > 50 ? 'HIGH' : 'OPTIMAL'})</span>
+                </div>
+            </div>
+
+            {/* TAB SELECTORS */}
+            <div className="flex border-b border-slate-200 dark:border-[#1e1e2a] pb-px overflow-x-auto whitespace-nowrap hide-scrollbar">
                 {[
-                    { id: 'canvas', label: 'Spatial Field Canvas (react-konva)', icon: <Eye size={14} /> },
-                    { id: 'ai', label: 'XGBoost & scikit-learn Predictor', icon: <Cpu size={14} /> },
-                    { id: 'cv', label: 'CV Bowling Analysis (OpenCV / MediaPipe)', icon: <Video size={14} /> },
-                    { id: 'data', label: 'Real-Time Stream Logs', icon: <Activity size={14} /> }
+                    { id: 'overview', label: 'Overview', icon: <Activity size={14} /> },
+                    { id: 'timeline', label: 'Medical Timeline', icon: <History size={14} /> },
+                    { id: 'articles', label: 'Injury Articles', icon: <FileText size={14} /> },
+                    { id: 'recovery', label: 'Recovery & Rehab', icon: <ActivitySquare size={14} /> },
+                    { id: 'prediction', label: 'AI Prediction', icon: <BrainCircuit size={14} /> },
+                    { id: 'canvas', label: 'CV / Heatmap', icon: <Video size={14} /> },
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -423,9 +541,225 @@ const CricketLab = () => {
             {/* TAB CONTENT PANEL */}
             <div className="min-h-[500px]">
                 
-                {/* 1. SPATIAL FIELD CANVAS TAB */}
-                {activeTab === 'canvas' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {intelLoading ? (
+                    <div className="flex flex-col justify-center items-center h-64 space-y-4">
+                        <div className="animate-spin w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+                        <span className="text-xs uppercase font-black text-slate-400 tracking-widest">Analyzing Medical Data...</span>
+                    </div>
+                ) : (
+                    <>
+                    {/* MEDICAL OVERVIEW TAB */}
+                    {activeTab === 'overview' && intel && (
+                        <div className="space-y-6">
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                {/* Risk Score */}
+                                <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5 relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-red-500 rounded-l-2xl"></div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Injury Probability</span>
+                                        <AlertTriangle size={16} className={intel.riskAssessment.riskScore >= 80 ? 'text-red-500' : 'text-amber-500'} />
+                                    </div>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white k-mono">{intel.riskAssessment.riskScore}%</h2>
+                                    <span className="text-xs font-bold text-red-500 uppercase tracking-widest">{intel.riskAssessment.riskLevel} RISK</span>
+                                </div>
+                                {/* Recovery Progress */}
+                                <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5 relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 rounded-l-2xl"></div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recovery Progress</span>
+                                        <Activity size={16} className="text-blue-500" />
+                                    </div>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white k-mono">{intel.medicalProfile?.recoveryProgress || 100}%</h2>
+                                    <div className="w-full bg-slate-100 dark:bg-[#1e1e2a] rounded-full h-1.5 mt-2">
+                                        <div className="h-full bg-blue-500 rounded-full" style={{ width: `${intel.medicalProfile?.recoveryProgress || 100}%`}}></div>
+                                    </div>
+                                </div>
+                                {/* Availability */}
+                                <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5 relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-emerald-500 rounded-l-2xl"></div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Availability</span>
+                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                    </div>
+                                    <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase leading-tight mt-1">{intel.availability}</h2>
+                                </div>
+                                {/* Minutes */}
+                                <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5 relative overflow-hidden">
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-500 rounded-l-2xl"></div>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recommended Mins</span>
+                                        <Timer size={16} className="text-amber-500" />
+                                    </div>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white k-mono">{intel.playingRecommendation?.recommendedPlayingMinutes || 90}</h2>
+                                    <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">{intel.playingRecommendation?.selectionAdvice || 'START PLAYER'}</span>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6">
+                                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2"><Sparkles className="text-emerald-500" size={18}/> AI Medical Summary</h3>
+                                <div className="space-y-2">
+                                    {intel.aiSummary && intel.aiSummary.map((summary, idx) => (
+                                        <div key={idx} className="flex gap-3">
+                                            <div className="mt-1"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div></div>
+                                            <p className="text-sm text-slate-600 dark:text-slate-300">{summary}</p>
+                                        </div>
+                                    ))}
+                                    {(!intel.aiSummary || intel.aiSummary.length === 0) && (
+                                        <p className="text-sm text-slate-500">No medical summary available.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* MEDICAL TIMELINE TAB */}
+                    {activeTab === 'timeline' && intel && (
+                        <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6">
+                            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6">Chronological Medical Timeline</h3>
+                            <div className="relative border-l border-slate-200 dark:border-[#1e1e2a] ml-4 space-y-8">
+                                {intel.timeline && intel.timeline.map((event, idx) => (
+                                    <div key={idx} className="relative pl-6">
+                                        <div className={`absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-[#13131a] ${event.eventType === 'Injury' ? 'bg-red-500' : event.eventType === 'Recovery' ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">{new Date(event.eventDate || event.date).toLocaleDateString()}</span>
+                                        <h4 className="text-sm font-bold text-slate-900 dark:text-white">{event.eventType} - {event.bodyPart || event.description || 'General Update'}</h4>
+                                        {event.severity && <span className="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest bg-amber-500/10 text-amber-500">{event.severity}</span>}
+                                        {event.sourceName && <p className="text-xs text-slate-500 mt-2 flex items-center gap-1"><FileText size={12}/> {event.sourceName}</p>}
+                                    </div>
+                                ))}
+                                {(!intel.timeline || intel.timeline.length === 0) && (
+                                    <p className="pl-6 text-sm text-slate-500">No events recorded on the timeline.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ARTICLES TAB */}
+                    {activeTab === 'articles' && intel && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {intel.supportingArticles && intel.supportingArticles.map((article, idx) => (
+                                <div key={idx} className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5 hover:border-blue-500/50 transition-colors">
+                                    <div className="flex justify-between items-start mb-3">
+                                        <span className="text-[10px] font-bold text-blue-500 uppercase tracking-widest bg-blue-500/10 px-2 py-1 rounded">{article.source}</span>
+                                        <span className="text-[10px] font-medium text-slate-400">{new Date(article.publishedDate).toLocaleDateString()}</span>
+                                    </div>
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-tight mb-2">{article.title}</h4>
+                                    <p className="text-xs text-slate-500 line-clamp-3 mb-4">{article.content}</p>
+                                    <a href={article.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-blue-500 flex items-center gap-1 hover:underline">Read Source <ChevronRight size={14}/></a>
+                                </div>
+                            ))}
+                            {(!intel.supportingArticles || intel.supportingArticles.length === 0) && (
+                                <p className="text-sm text-slate-500">No supporting articles found for this player's recent health events.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* RECOVERY & REHAB TAB */}
+                    {activeTab === 'recovery' && intel && (
+                        <div className="space-y-6">
+                            <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6">
+                                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-2">Recovery Estimate</h3>
+                                <p className="text-2xl font-black text-emerald-500 mb-4">{intel.estimatedReturn?.progressStatus || 'Unknown'}</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 dark:bg-[#0a0a0c] p-4 rounded-xl border border-slate-100 dark:border-[#1e1e2a]">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Expected Return</span>
+                                        <span className="text-lg font-bold text-slate-900 dark:text-white">{intel.estimatedReturn?.recoveryWindow || 'Ready'}</span>
+                                    </div>
+                                    <div className="bg-slate-50 dark:bg-[#0a0a0c] p-4 rounded-xl border border-slate-100 dark:border-[#1e1e2a]">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Confidence</span>
+                                        <span className="text-lg font-bold text-slate-900 dark:text-white">{intel.estimatedReturn?.confidence || 100}%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {intel.exerciseRecommendations && (
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5">
+                                        <h4 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2"><CheckCircle2 size={14}/> Recommended Exercises</h4>
+                                        <ul className="space-y-2">
+                                            {intel.exerciseRecommendations.recommendedExercises.map((ex, i) => (
+                                                <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2"><span className="text-emerald-500 mt-0.5">•</span> {ex}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5">
+                                        <h4 className="text-xs font-black text-red-500 uppercase tracking-widest mb-3 flex items-center gap-2"><AlertTriangle size={14}/> Exercises To Avoid</h4>
+                                        <ul className="space-y-2">
+                                            {intel.exerciseRecommendations.exercisesToAvoid.map((ex, i) => (
+                                                <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex items-start gap-2"><span className="text-red-500 mt-0.5">•</span> {ex}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* AI PREDICTION TAB */}
+                    {activeTab === 'prediction' && intel && (
+                        <div className="grid md:grid-cols-3 gap-6">
+                            <div className="md:col-span-2 space-y-6">
+                                <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6">
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-4 flex items-center gap-2"><Cpu size={18} className="text-blue-500"/> Predictive Analysis</h3>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-1">
+                                                <span className="text-slate-400">Re-injury Probability</span>
+                                                <span className="text-slate-900 dark:text-white">{intel.predictionDetails?.chanceOfReinjury || 0}%</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 dark:bg-[#1e1e2a] rounded-full h-2">
+                                                <div className="h-full bg-gradient-to-r from-emerald-500 to-red-500 rounded-full" style={{ width: `${intel.predictionDetails?.chanceOfReinjury || 0}%`}}></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5">
+                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Risk Factors</h4>
+                                        <ul className="space-y-2">
+                                            {intel.predictionDetails?.riskFactors?.length > 0 ? intel.predictionDetails.riskFactors.map((r, i) => (
+                                                <li key={i} className="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2"><span className="text-red-500 mt-0.5">↓</span> {r}</li>
+                                            )) : <li className="text-xs text-slate-500">No significant risk factors</li>}
+                                        </ul>
+                                    </div>
+                                    <div className="bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-5">
+                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Protection Factors</h4>
+                                        <ul className="space-y-2">
+                                            {intel.predictionDetails?.protectionFactors?.length > 0 ? intel.predictionDetails.protectionFactors.map((p, i) => (
+                                                <li key={i} className="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2"><span className="text-emerald-500 mt-0.5">↑</span> {p}</li>
+                                            )) : <li className="text-xs text-slate-500">None identified</li>}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-6">
+                                <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6 h-full">
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider mb-6">Historical Records</h3>
+                                    <div className="space-y-4">
+                                        {intel.historicalInjuries && intel.historicalInjuries.length > 0 ? (
+                                            intel.historicalInjuries.map((hist, i) => (
+                                                <div key={i} className="border-b border-slate-100 dark:border-[#1e1e2a] pb-3 last:border-0">
+                                                    <div className="flex justify-between items-start mb-1">
+                                                        <span className="text-xs font-bold text-slate-900 dark:text-white">{hist.injury}</span>
+                                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{new Date(hist.date).getFullYear()}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-500 uppercase tracking-widest">{hist.severity} • {hist.recoveryDays} days out</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-sm text-slate-500 text-center mt-10">No previous injury history available.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* ORIGINAL CV / HEATMAP CANVAS TAB */}
+                    {activeTab === 'canvas' && (
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         {/* Control Box */}
                         <div className="lg:col-span-3 space-y-4">
                             <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-5">
@@ -991,31 +1325,8 @@ const CricketLab = () => {
                         </div>
                     </div>
                 )}
-
-                {/* 4. REAL-TIME DATA STREAM TAB */}
-                {activeTab === 'data' && (
-                    <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase leading-none mb-1">Websocket Event Pulse</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-time bi-directional telemetry stream log</p>
-                            </div>
-                            <span className={`badge-live ${socketConnected ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
-                                {socketConnected ? "Socket.IO Online" : "Socket.IO Offline"}
-                            </span>
-                        </div>
-
-                        <div className="space-y-2 max-h-96 overflow-y-auto font-mono text-xs bg-slate-50 dark:bg-[#0a0a0c] border border-slate-100 dark:border-[#1e1e2a] rounded-2xl p-5 text-left">
-                            {liveLogs.map((log, i) => (
-                                <div key={i} className="flex gap-4 border-b border-slate-100 dark:border-white/5 pb-2 last:border-0">
-                                    <span className="text-blue-500 font-bold flex-shrink-0">[{new Date().toLocaleTimeString()}]</span>
-                                    <span className={log.includes("runs") ? 'text-amber-500 font-bold' : 'text-slate-700 dark:text-slate-300'}>{log}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                </>
                 )}
-
             </div>
         </div>
     );

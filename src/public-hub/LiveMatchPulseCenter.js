@@ -16,7 +16,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                         teamA: 'Jabalpur Royal Lions', teamA_Score: '218/8', teamA_Overs: '(54.0 ov)',
                         teamB: 'Malwa Stallions', teamB_Score: '-', teamB_Overs: '',
                         statusText: 'Jabalpur Royal Lions won by 54 runs',
-                        probA: 78, probB: 22, probA_color: 'bg-emerald-500', probB_color: 'bg-blue-500'
+                        probA: 78, probB: 22, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
                     },
                     {
                         id: 'm2', sport: 'Cricket', matchup: 'Matchup',
@@ -24,7 +24,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                         teamA: 'Glamorgan', teamA_Score: '246/9d', teamA_Overs: '(90.0 ov)',
                         teamB: 'Sussex', teamB_Score: '227/10', teamB_Overs: '(76.1 ov)',
                         statusText: 'Sussex trail by 19 runs',
-                        probA: 48, probB: 52, probA_color: 'bg-emerald-500', probB_color: 'bg-blue-500'
+                        probA: 48, probB: 52, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
                     },
                     {
                         id: 'm3', sport: 'Cricket', matchup: 'Matchup',
@@ -32,7 +32,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                         teamA: 'Yorkshire', teamA_Score: '305/7', teamA_Overs: '(90.0 ov)',
                         teamB: 'Warwickshire', teamB_Score: '-', teamB_Overs: '',
                         statusText: 'Yorkshire lead by 305 runs',
-                        probA: 82, probB: 18, probA_color: 'bg-emerald-500', probB_color: 'bg-blue-500'
+                        probA: 82, probB: 18, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
                     },
                     {
                         id: 'm4', sport: 'Cricket', matchup: 'Matchup',
@@ -40,7 +40,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                         teamA: 'Somerset', teamA_Score: '256/7', teamA_Overs: '(90.0 ov)',
                         teamB: 'Nottinghamshire', teamB_Score: '-', teamB_Overs: '',
                         statusText: 'Somerset lead by 256 runs',
-                        probA: 74, probB: 26, probA_color: 'bg-emerald-500', probB_color: 'bg-blue-500'
+                        probA: 74, probB: 26, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
                     },
                     {
                         id: 'm5', sport: 'Cricket', matchup: 'Matchup',
@@ -48,7 +48,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                         teamA: 'Essex', teamA_Score: '198/6', teamA_Overs: '(70.0 ov)',
                         teamB: 'Leicestershire', teamB_Score: '-', teamB_Overs: '',
                         statusText: 'Essex lead by 198 runs',
-                        probA: 68, probB: 32, probA_color: 'bg-emerald-500', probB_color: 'bg-blue-500'
+                        probA: 68, probB: 32, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
                     },
                     {
                         id: 'm6', sport: 'Cricket', matchup: 'Matchup',
@@ -56,7 +56,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                         teamA: 'Afghanistan A', teamA_Score: '218/8', teamA_Overs: '(54.0 ov)',
                         teamB: 'Sri Lanka A', teamB_Score: '37/0', teamB_Overs: '(8.3 ov)',
                         statusText: 'Sri Lanka A need 182 runs',
-                        probA: 33, probB: 67, probA_color: 'bg-emerald-500', probB_color: 'bg-blue-500'
+                        probA: 33, probB: 67, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
                     }
                 ];
                 setMatches(dummyMatches);
@@ -186,7 +186,7 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                                         <span className="text-slate-900 dark:text-white uppercase">{(m.teamA.substring(0,3))} {m.probA}%</span>
                                         <span className="text-slate-400 uppercase">{m.probB}% {(m.teamB.substring(0,3))}</span>
                                     </div>
-                                    <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex">
                                         <div className={`h-full ${m.probA_color}`} style={{ width: `${m.probA}%` }}></div>
                                         <div className={`h-full ${m.probB_color}`} style={{ width: `${m.probB}%` }}></div>
                                     </div>
@@ -227,9 +227,9 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                                     <span className="text-slate-900 dark:text-white">33%</span>
                                     <span className="text-blue-500">67%</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                                    <div className="h-full bg-emerald-500" style={{ width: '33%' }}></div>
-                                    <div className="h-full bg-blue-500" style={{ width: '67%' }}></div>
+                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                                    <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600" style={{ width: '33%' }}></div>
+                                    <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600" style={{ width: '67%' }}></div>
                                 </div>
                             </div>
                         </div>

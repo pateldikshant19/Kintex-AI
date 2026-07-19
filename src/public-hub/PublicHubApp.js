@@ -57,7 +57,6 @@ const PublicHubApp = () => {
                 </div>
 
                 <div className="flex flex-col gap-6 w-full items-center mb-4">
-                    <ThemeToggle />
                     <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                         <Settings size={20} />
                     </button>
@@ -101,6 +100,7 @@ const PublicHubApp = () => {
 
                         {/* Right Area */}
                         <div className="flex items-center gap-5">
+                            <ThemeToggle />
                             <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                                 <Search size={20} />
                             </button>

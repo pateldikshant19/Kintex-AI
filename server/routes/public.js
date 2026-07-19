@@ -7,20 +7,8 @@ const Performance = require('../models/Performance');
 // PUBLIC-SAFE curated data - No auth required for these
 router.get('/matches', async (req, res) => {
     try {
-        // Return live matches
-        const LiveMatch = require('../models/LiveMatch');
-        const matches = await LiveMatch.find({}).sort({ date: -1 }).limit(20);
-        
-        // Strip sensitive/pro info
-        const filteredMatches = matches.map(m => ({
-            id: m._id,
-            matchId: m.match_id,
-            name: m.name,
-            status: m.status,
-            venue: m.venue,
-            date: m.date,
-            score: m.score
-        }));
+        // Fetch live matches via unified provider
+        const filteredMatches = await cricketDataProvider.getLiveMatches();
         res.json(filteredMatches);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -69,6 +57,7 @@ router.get('/leagues', async (req, res) => {
 });
 
 const axios = require('axios');
+const cricketDataProvider = require('../services/cricketDataProvider');
 
 // LIVE PROXY SEARCH ENDPOINT
 router.get('/players/search', async (req, res) => {
@@ -82,57 +71,33 @@ router.get('/players/search', async (req, res) => {
             return res.json(cachedPlayers);
         }
 
-        // 2. If not found, fetch from RapidAPI proxy
-        const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-        const RAPIDAPI_HOST = 'cricbuzz-cricket.p.rapidapi.com';
-
-        if (!RAPIDAPI_KEY) return res.json([]);
-
-        const searchRes = await axios.get(`https://${RAPIDAPI_HOST}/stats/v1/player/search`, {
-            headers: { 'X-RapidAPI-Key': RAPIDAPI_KEY, 'X-RapidAPI-Host': RAPIDAPI_HOST },
-            params: { plrN: query }
-        });
-
-        const players = searchRes.data.player || [];
+        // 2. Fetch from Unified Provider (tries CricAPI, falls back to RapidAPI)
+        const players = await cricketDataProvider.searchPlayers(query);
         if (players.length === 0) return res.json([]);
 
         // 3. Take the first exact match and get deep profile
         const bestMatch = players[0];
-        const playerId = bestMatch.id;
-
-        const profRes = await axios.get(`https://${RAPIDAPI_HOST}/stats/v1/player/${playerId}`, {
-            headers: { 'X-RapidAPI-Key': RAPIDAPI_KEY, 'X-RapidAPI-Host': RAPIDAPI_HOST }
-        });
-
-        const deep = profRes.data;
-        const country = bestMatch.teamName || 'Unknown';
+        const playerId = bestMatch.playerId;
+        const source = bestMatch.source;
         
-        let cleanBio = deep.bio ? deep.bio.replace(/<[^>]+>/g, '').substring(0, 300) + "..." : `Professional Cricketer for ${country}.`;
-        
-        let records = [];
-        if (deep.rankings) {
-            for (const [format, ranks] of Object.entries(deep.rankings)) {
-                for (const [key, val] of Object.entries(ranks)) {
-                    if (val && !isNaN(val) && parseInt(val) <= 100) {
-                        records.push(`ICC ${format.toUpperCase()} ${key.replace('Rank', '').replace('Best', ' Best ')} Rank: #${val}`);
-                    }
-                }
-            }
-        }
-        if (records.length === 0) records = ["International Professional", "National Team Cap"];
+        const deepProfile = await cricketDataProvider.getPlayerStats(playerId, source);
+
+        const country = bestMatch.country || 'Unknown';
+        let cleanBio = deepProfile?.bio || `Professional Cricketer for ${country}.`;
+        let records = ["International Professional", "National Team Cap"];
 
         const playerDoc = {
             playerId: playerId.toString(),
-            name: bestMatch.name || bestMatch.title,
+            name: bestMatch.name,
             sport: 'Cricket',
             teamName: country,
-            role: bestMatch.playingRole || deep.role || 'Professional Cricketer',
-            battingStyle: deep.battingStyle || '',
-            bowlingStyle: deep.bowlingStyle || '',
+            role: deepProfile?.role || 'Professional Cricketer',
+            battingStyle: deepProfile?.battingStyle || '',
+            bowlingStyle: deepProfile?.bowlingStyle || '',
             country: country,
-            imageId: deep.faceImageId || bestMatch.faceImageId || bestMatch.imageId,
+            imageId: deepProfile?.imageId || null,
             bio: cleanBio,
-            records: records.slice(0, 5)
+            records: records
         };
 
         // 4. Save to our database so future searches hit the cache

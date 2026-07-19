@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, ChevronRight, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSession } from '../context/SessionContext';
 
 const Players = () => {
+  const { selectedTeamId, selectedLeagueId } = useSession();
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,7 +17,11 @@ const Players = () => {
             setLoading(false);
             return;
         }
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/players`, {
+        let queryStr = '';
+        if (selectedTeamId) queryStr += `?teamId=${selectedTeamId}`;
+        if (selectedLeagueId) queryStr += queryStr ? `&leagueId=${selectedLeagueId}` : `?leagueId=${selectedLeagueId}`;
+
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/players${queryStr}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {

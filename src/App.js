@@ -19,7 +19,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 import Landing from './pages/Landing';
 import Developers from './pages/Developers';
-import AIChat from './components/AIChat';
 import AdminAnalytics from './pages/AdminAnalytics';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import PlayerBio from './pages/PlayerBio';
@@ -86,8 +85,6 @@ function MainLayout() {
           </Route>
 
         </Routes>
-        {/* Persistent AI Chat Assistant */}
-        <AIChat />
       </main>
     </div>
   );

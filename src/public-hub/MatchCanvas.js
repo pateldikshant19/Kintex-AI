@@ -192,7 +192,7 @@ const MatchCanvas = ({ matchId, sport = 'Cricket' }) => {
                                 <span className="text-[10px] font-mono text-slate-600">{i * 20}m</span>
                                 <div className="flex-grow h-6 relative bg-slate-800/40 rounded-full overflow-hidden">
                                      <div 
-                                        className="absolute top-0 bottom-0 bg-gradient-to-r from-emerald-500 to-blue-500 opacity-60 group-hover/item:opacity-100 transition-all"
+                                        className="absolute top-0 bottom-0 bg-gradient-to-r from-emerald-400 to-blue-400 dark:from-emerald-600 dark:to-blue-600 opacity-60 group-hover/item:opacity-100 transition-all"
                                         style={{ width: `${30 + Math.random() * 50}%`, left: `${Math.random() * 20}%` }}
                                      ></div>
                                 </div>

@@ -40,7 +40,7 @@ Your core idea, as documented across [PROJECT_OVERVIEW.md](file:///c:/Users/hp/O
 | Tactical Data (video analysis, positioning) | ✅ CV bowling lab, wagon wheel, pitch maps, draggable fielding | ✅ |
 | Psychological Factors (fatigue, stress, motivation) | ❌ Zero implementation — no mood/stress inputs anywhere | 🔴 |
 | Environmental Context (weather, travel, schedule) | ❌ Zero implementation — no weather or travel data | 🔴 |
-| Historical Patterns (injury history, recovery) | ⚠️ Injury history is a parameter in ML model but not from DB | ⚠️ |
+| Historical Patterns (injury history, recovery) | ⚠️ Transitioning to NLP-driven text mining from articles/match reports, bypassing quantitative workload | ⚠️ |
 
 > **Verdict**: You've nailed physical + tactical. But your **biggest differentiator** in the docs — psychological & environmental factors — has no code at all. This is what separates you from Catapult/STATSports in your methodology doc, so it should be prioritized.
 
@@ -100,7 +100,7 @@ Your core idea, as documented across [PROJECT_OVERVIEW.md](file:///c:/Users/hp/O
 | **Real-Time Sockets** | Core Features, Architecture | ✅ Socket.IO rooms with live delivery broadcast | ✅ **On Track** |
 | **CV Bowling Action Lab** (15° ICC rule) | Core Features, AI/ML | ✅ MediaPipe + OpenCV code with angle math | ✅ **On Track** |
 | **Win Probability (XGBoost)** | AI/ML Features | ✅ Endpoint exists, sigmoid emulation works | ✅ **On Track** |
-| **Injury Risk (Random Forest)** | AI/ML Features | ✅ Endpoint exists, workload formula works | ✅ **On Track** |
+| **Injury Risk (NLP & Heuristics)** | AI/ML Features | ⚠️ Endpoint exists but shifting strategy to text-mining & NLP heuristic scoring | ⚠️ **Pivoting** |
 | **Fatigue Analysis (Ridge Regression)** | AI/ML Features | ✅ Endpoint exists, biometric formula works | ✅ **On Track** |
 | **Recommendation Engine** | AI/ML Features | ❌ No code — mentioned in docs only | 🔴 **Missing** |
 | **ARIMA/Prophet Forecasting** | AI/ML Features | ❌ No code — mentioned in docs only | 🔴 **Missing** |
@@ -468,6 +468,7 @@ Your H.E.A.L. framework positions the Athlete at the center of the ecosystem ("E
 - No training pipeline or dataset loading
 - No model evaluation metrics (accuracy, F1, AUC)
 - Player scoring function is defined but not exposed via any API endpoint
+- **New Direction**: Injury prediction is shifting from workload ML models to an NLP-based heuristic engine (requires scraping & text mining)
 
 ---
 
@@ -606,6 +607,8 @@ These features are mentioned in docs but have **zero implementation**:
 | Multi-match support (beyond c1) | Docs only | High |
 | Real video upload for CV analysis | Docs only | High |
 | Wearable device integration | Docs only | Very High |
+| NLP Pipeline for Injury Prediction | Roadmap created, needs implementation | High |
+| Web Scraper for News/Articles | Roadmap created, needs implementation | Medium |
 | Performance comparison tool | Docs only | Medium |
 | Formation/Tactics export | Manager Dashboard | Medium |
 | Social sharing / Fan leaderboards | Public Hub concept | Medium |

@@ -40,22 +40,21 @@ const Login = () => {
         fetchData();
     }, []);
 
-    const isLeagueActive = (league) => {
-        if (!league) return false;
-        // Fix for international series matching
-        if (league.seriesType && league.seriesType.toLowerCase() === 'international') return true;
-        if (league.name && league.name.toLowerCase().includes('international')) return true;
-        if (!league.startDate || !league.endDate) return true;
+    const getLeagueStatus = (league) => {
+        if (!league || !league.startDate || !league.endDate) return 'Live / Active';
         
         const now = new Date();
-        const start = new Date(league.startDate);
-        const end = new Date(league.endDate);
+        const start = new Date(parseInt(league.startDate) || league.startDate);
+        const end = new Date(parseInt(league.endDate) || league.endDate);
         
-        // access starts 21 days before and ends 21 days after
-        const accessStart = new Date(start.getTime() - 21 * 24 * 60 * 60 * 1000);
-        const accessEnd = new Date(end.getTime() + 21 * 24 * 60 * 60 * 1000);
-        
-        return now >= accessStart && now <= accessEnd;
+        if (now > end) return 'Complete';
+        if (now >= start && now <= end) return 'Live / Active';
+        return 'Upcoming';
+    };
+
+    const isLeagueActive = (league) => {
+        const status = getLeagueStatus(league);
+        return status === 'Live / Active' || status === 'Upcoming';
     };
 
     const handleChange = (e) => {
@@ -88,7 +87,33 @@ const Login = () => {
         }
     };
 
-    const filteredTeams = teams.filter(t => t.leagueIds && t.leagueIds.includes(formData.leagueId));
+    // Filter out leagues that ended in 2025 or earlier
+    const validLeagues = leagues.filter(l => {
+        if (!l.endDate) return true;
+        const end = new Date(parseInt(l.endDate) || l.endDate);
+        return end.getFullYear() >= 2026;
+    });
+
+    // Smart team filtering: if exact league mapping is missing, guess based on league name
+    // If we STILL can't find any teams, we fallback to returning ALL teams so the user is never blocked.
+    let filteredTeams = teams.filter(t => {
+        if (t.leagueIds && t.leagueIds.includes(formData.leagueId)) return true;
+        
+        const selectedLeague = leagues.find(l => l.leagueId === formData.leagueId);
+        if (selectedLeague && selectedLeague.name) {
+            const leagueName = selectedLeague.name.toLowerCase();
+            const teamName = t.name.toLowerCase();
+            // Split team name by space to match partials (e.g. "India Women" matches "India")
+            const parts = teamName.split(' ');
+            return parts.some(part => part.length > 2 && leagueName.includes(part));
+        }
+        return false;
+    });
+    
+    // Fallback: If strict matching yields 0 teams, show all teams to prevent blocking login
+    if (filteredTeams.length === 0) {
+        filteredTeams = teams;
+    }
 
     const inputClass = "w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm";
     const selectClass = "w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm appearance-none";
@@ -163,9 +188,9 @@ const Login = () => {
                                     required
                                 >
                                     <option value="" disabled>-- Select Competition --</option>
-                                    {leagues.map(l => (
+                                    {validLeagues.map(l => (
                                         <option key={l.leagueId} value={l.leagueId}>
-                                            {l.name} {isLeagueActive(l) ? '' : '(Inactive)'}
+                                            {l.name} ({getLeagueStatus(l)})
                                         </option>
                                     ))}
                                 </select>

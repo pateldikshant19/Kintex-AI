@@ -1,0 +1,55 @@
+{
+  "matchStatus": {
+    "missed": 50,
+    "did not play": 50,
+    "ruled out": 50,
+    "rested": 10,
+    "doubtful": 30,
+    "fit": -40,
+    "available": -40
+  },
+  "trainingStatus": {
+    "missed practice": 25,
+    "light training": -10,
+    "returned training": -20,
+    "full training": -30
+  },
+  "bodyPart": {
+    "hamstring": 30,
+    "knee": 40,
+    "acl": 70,
+    "back": 40,
+    "groin": 35,
+    "shoulder": 30,
+    "concussion": 50,
+    "calf": 25,
+    "ankle": 30
+  },
+  "eventType": {
+    "Fatigue": 15,
+    "Rest": 10,
+    "Recovery": -20,
+    "Injury": 20
+  },
+  "severity": {
+    "minor": 10,
+    "mild": 10,
+    "major": 50,
+    "severe": 60,
+    "suspected": 30,
+    "season-ending": 100
+  },
+  "thresholds": {
+    "risk": {
+      "High": 80,
+      "Medium": 40,
+      "Low": 0
+    },
+    "availability": {
+      "Unavailable": 80,
+      "Limited Training": 40,
+      "Monitor": 15,
+      "Ready": 0
+    }
+  }
+}

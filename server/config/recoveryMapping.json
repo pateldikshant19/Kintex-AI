@@ -1,0 +1,28 @@
+{
+  "minor": { "minDays": 1, "maxDays": 3, "label": "1-3 Days" },
+  "tightness": { "minDays": 3, "maxDays": 7, "label": "3-7 Days" },
+  "knock": { "minDays": 1, "maxDays": 5, "label": "1-5 Days" },
+  "strain": {
+    "default": { "minDays": 7, "maxDays": 14, "label": "7-14 Days" },
+    "groin": { "minDays": 14, "maxDays": 28, "label": "14-28 Days" }
+  },
+  "tear": { "minDays": 21, "maxDays": 45, "label": "21-45 Days" },
+  "spasm": {
+    "default": { "minDays": 3, "maxDays": 10, "label": "3-10 Days" },
+    "back": { "minDays": 7, "maxDays": 14, "label": "7-14 Days" }
+  },
+  "hamstring": {
+    "minor": { "minDays": 7, "maxDays": 14, "label": "7-14 Days" },
+    "major": { "minDays": 21, "maxDays": 35, "label": "21-35 Days" },
+    "default": { "minDays": 14, "maxDays": 21, "label": "14-21 Days" }
+  },
+  "calf": {
+    "default": { "minDays": 10, "maxDays": 21, "label": "10-21 Days" }
+  },
+  "acl": {
+    "default": { "minDays": 180, "maxDays": 300, "label": "180-300 Days" }
+  },
+  "concussion": {
+    "default": { "minDays": 7, "maxDays": 14, "label": "7-14 Days" }
+  }
+}

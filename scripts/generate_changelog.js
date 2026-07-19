@@ -83,14 +83,14 @@ function generate() {
         currentChangelog = fs.readFileSync(CHANGELOG_PATH, 'utf8');
     }
 
-    // If there's a main header, inject below it, otherwise just prepend
-    if (currentChangelog.startsWith('# ')) {
-        const lines = currentChangelog.split('\n');
-        const header = lines[0];
-        const rest = lines.slice(1).join('\n');
-        fs.writeFileSync(CHANGELOG_PATH, `${header}\n\n${newEntry}${rest}`);
+    if (currentChangelog.trim() === "") {
+        fs.writeFileSync(CHANGELOG_PATH, `# Automated Changelog\n\n${newEntry}`);
     } else {
-        fs.writeFileSync(CHANGELOG_PATH, `# Automated Changelog\n\n${newEntry}${currentChangelog}`);
+        // Append to the end of the file instead of prepending
+        const newContent = currentChangelog.endsWith('\n') 
+            ? `${currentChangelog}\n${newEntry}` 
+            : `${currentChangelog}\n\n${newEntry}`;
+        fs.writeFileSync(CHANGELOG_PATH, newContent);
     }
 
     console.log("Changelog successfully updated!");

@@ -58,6 +58,7 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/public', require('./routes/public'));
 app.use('/api/cricket', require('./routes/cricket'));
+app.use('/api/injury-intelligence', require('./routes/injuryIntelligence'));
 
 // ─── MongoDB Connection ─────────────────────────────────────────────
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sport-analytics';
