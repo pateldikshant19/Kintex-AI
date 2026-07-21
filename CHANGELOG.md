@@ -72,3 +72,53 @@
 ### High-Level Summary of Changes:
 - **Modified:** `src/public-hub/LiveMatchPulseCenter.js`
 - **Modified:** `src/public-hub/PublicHubApp.js`
+
+## [Commit: b42d26b] - Sunday, July 19, 2026 at 11:12 PM
+**Message:** Fix Netlify build by pinning Node.js version to 18
+**Time Tracked Since Last Save:** ~34 Days
+
+### High-Level Summary of Changes:
+- **Added:** `.node-version`
+- **Added:** `CHANGELOG.md`
+- **Modified:** `project_status_report.md`
+- **Modified:** `scripts/generate_changelog.js`
+- **Added:** `server/config/injuryRules.json`
+- **Added:** `server/config/recoveryMapping.json`
+- **Added:** `server/models/PlayerAssessment.js`
+- **Added:** `server/models/PlayerHealthEvent.js`
+- **Added:** `server/models/PlayerMedicalProfile.js`
+- **Added:** `server/models/PlayerRecovery.js`
+- **Added:** `server/routes/injuryIntelligence.js`
+- **Modified:** `server/routes/players.js`
+- **Modified:** `server/routes/public.js`
+- **Added:** `server/scripts/seed_t20_league.js`
+- **Added:** `server/scripts/seed_womens_t20_2024.js`
+- **Added:** `server/seed_users.js`
+- **Modified:** `server/server.js`
+- **Added:** `server/services/cricketDataProvider.js`
+- **Added:** `server/services/exerciseEngine.js`
+- **Added:** `server/services/liveMatchEngine.js`
+- **Added:** `server/services/medicalProfileBuilder.js`
+- **Added:** `server/services/news/index.js`
+- **Added:** `server/services/news/providers/BaseProvider.js`
+- **Added:** `server/services/news/providers/GNewsProvider.js`
+- **Added:** `server/services/news/providers/NewsAPIProvider.js`
+- **Added:** `server/services/nlp/nlpProcessor.js`
+- **Added:** `server/services/predictionEngine.js`
+- **Added:** `server/services/recommendationEngine.js`
+- **Added:** `server/services/recoveryEngine.js`
+- **Added:** `server/services/ruleEngine.js`
+- **Added:** `server/services/timelineService.js`
+- **Modified:** `src/App.js`
+- **Modified:** `src/pages/CricketLab.js`
+- **Modified:** `src/pages/DashboardAnalyst.js`
+- **Modified:** `src/pages/DashboardManager.js`
+- **Modified:** `src/pages/Login.js`
+- **Modified:** `src/pages/PlayerBio.js`
+- **Modified:** `src/pages/Players.js`
+- **Modified:** `src/public-hub/LiveMatchPulseCenter.js`
+- **Modified:** `src/public-hub/MatchCanvas.js`
+- **Modified:** `src/public-hub/PublicHubApp.js`
+
+---
+
