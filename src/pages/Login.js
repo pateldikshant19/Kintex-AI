@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, ArrowLeft, Trophy, Users, Shield, Activity, BarChart3, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ArrowLeft, Trophy, Users, Shield, Activity, BarChart3, ShieldAlert, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 
