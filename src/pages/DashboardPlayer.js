@@ -19,6 +19,18 @@ const REAL_PLAYER_PERFORMANCES = {
             award: 'Player of the Match',
             impactScore: '98.5'
         },
+        trajectory: {
+            latest: {
+                title: 'T20 World Cup Match-by-Match Runs',
+                labels: ['vs IRE', 'vs PAK', 'vs USA', 'vs AFG', 'vs BAN', 'vs AUS', 'vs ENG (Semi)', 'vs SA (Final)'],
+                data: [1, 4, 0, 24, 37, 0, 9, 76]
+            },
+            season: {
+                title: 'Season Performance Rating (out of 100)',
+                labels: ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026'],
+                data: [82, 86, 84, 91, 95, 88, 92, 98]
+            }
+        },
         careerStats: { matches: 117, avg: '48.7', strikeRate: '137.0', centuries: 1, fifties: 38 }
     },
     'jasprit bumrah': {
@@ -34,6 +46,18 @@ const REAL_PLAYER_PERFORMANCES = {
             economy: '4.50',
             award: 'Player of the Tournament',
             impactScore: '99.2'
+        },
+        trajectory: {
+            latest: {
+                title: 'Match Bowling Impact Rating',
+                labels: ['vs IRE', 'vs PAK', 'vs USA', 'vs AFG', 'vs BAN', 'vs AUS', 'vs ENG (Semi)', 'vs SA (Final)'],
+                data: [94, 98, 92, 96, 93, 95, 97, 99]
+            },
+            season: {
+                title: 'Season Economy & Control Index',
+                labels: ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026'],
+                data: [88, 91, 93, 95, 96, 98, 99, 99]
+            }
         },
         careerStats: { matches: 70, wickets: 89, econ: '6.27', bowlAvg: '17.7', dotBallPct: '58.4%' }
     },
@@ -52,6 +76,18 @@ const REAL_PLAYER_PERFORMANCES = {
             award: 'Player of the Match',
             impactScore: '99.0'
         },
+        trajectory: {
+            latest: {
+                title: 'T20 World Cup Match-by-Match Runs',
+                labels: ['vs IRE', 'vs PAK', 'vs USA', 'vs AFG', 'vs BAN', 'vs AUS', 'vs ENG (Semi)', 'vs SA (Final)'],
+                data: [52, 13, 3, 8, 23, 92, 57, 9]
+            },
+            season: {
+                title: 'Season Performance Sync Rate',
+                labels: ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026'],
+                data: [78, 82, 85, 89, 94, 98, 96, 95]
+            }
+        },
         careerStats: { matches: 159, avg: '32.0', strikeRate: '140.9', centuries: 5, fifties: 32 }
     },
     'default': {
@@ -69,6 +105,18 @@ const REAL_PLAYER_PERFORMANCES = {
             award: 'Star Performer of the Match',
             impactScore: '95.8'
         },
+        trajectory: {
+            latest: {
+                title: 'Recent Matches Performance Scores',
+                labels: ['Match 1', 'Match 2', 'Match 3', 'Match 4', 'Match 5', 'Match 6', 'Match 7', 'Match 8'],
+                data: [72, 78, 85, 80, 89, 92, 88, 96]
+            },
+            season: {
+                title: 'Season Neural Alignment Rate',
+                labels: ['Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Aug 2026'],
+                data: [80, 82, 85, 87, 90, 93, 91, 95]
+            }
+        },
         careerStats: { matches: 88, avg: '44.2', strikeRate: '142.8', centuries: 3, fifties: 18 }
     }
 };
@@ -76,7 +124,7 @@ const REAL_PLAYER_PERFORMANCES = {
 const DashboardPlayer = () => {
     const { user } = useAuth();
     const [liveMatches, setLiveMatches] = useState([]);
-    const [chartData] = useState([82, 85, 84, 88, 92, 90, 95, 94]);
+    const [chartTab, setChartTab] = useState('latest'); // 'latest' or 'season'
 
     useEffect(() => {
         const fetchMatches = async () => {
@@ -100,6 +148,7 @@ const DashboardPlayer = () => {
     const userNameKey = (user?.name || '').toLowerCase().trim();
     const playerPerf = REAL_PLAYER_PERFORMANCES[userNameKey] || REAL_PLAYER_PERFORMANCES['default'];
     const lastMatch = playerPerf.lastMatch;
+    const activeTrajectory = playerPerf.trajectory[chartTab] || playerPerf.trajectory.latest;
 
     // Resolve next match dynamically from Cricbuzz feed if available
     const activeNextMatch = liveMatches.length > 0 ? liveMatches[0] : null;
@@ -219,23 +268,40 @@ const DashboardPlayer = () => {
                 <PlayerStatCard icon={Heart} title="Heart Rate" value="62" sub="Resting Nominal" accentColor="red" />
             </div>
 
-            {/* Chart + Schedule Row */}
+            {/* Dynamic Personal Trajectory Chart + Schedule Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-                {/* Performance Chart */}
+                {/* Performance Trajectory Chart (Interactive LATEST vs SEASON) */}
                 <div className="lg:col-span-2 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-6">
                     <div className="flex justify-between items-center mb-5">
                         <div>
                             <h2 className="text-sm font-black text-slate-900 dark:text-white tracking-tight">Personal Trajectory</h2>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Performance Sync Over Time</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{activeTrajectory.title}</p>
                         </div>
                         <div className="flex bg-slate-50 dark:bg-[#0a0a0c] rounded-lg p-0.5 border border-slate-200 dark:border-[#1e1e2a]">
-                            <button className="px-4 py-1.5 bg-blue-600 text-white rounded-md text-[10px] font-black uppercase tracking-widest">LATEST</button>
-                            <button className="px-4 py-1.5 text-slate-400 rounded-md text-[10px] font-black uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-colors">SEASON</button>
+                            <button
+                                onClick={() => setChartTab('latest')}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${chartTab === 'latest' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                            >
+                                LATEST
+                            </button>
+                            <button
+                                onClick={() => setChartTab('season')}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${chartTab === 'season' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                            >
+                                SEASON
+                            </button>
                         </div>
                     </div>
+
                     <div className="h-[260px] w-full bg-slate-50 dark:bg-[#0a0a0c] rounded-xl border border-slate-100 dark:border-[#1e1e2a] p-4">
-                        <DashboardChart data={chartData} height={220} color="#3b82f6" />
+                        <DashboardChart
+                            data={activeTrajectory.data}
+                            labels={activeTrajectory.labels}
+                            title={activeTrajectory.title}
+                            height={220}
+                            color="#3b82f6"
+                        />
                     </div>
                 </div>
 
