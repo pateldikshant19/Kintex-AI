@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, ArrowLeft, Trophy, Users } from 'lucide-react';
+import { Mail, Lock, ArrowRight, ArrowLeft, Trophy, Users, Shield, Activity, BarChart3, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 
@@ -101,26 +101,45 @@ const Login = () => {
         setError('');
     };
 
+    const redirectUserByRole = (user) => {
+        const role = (user.role || '').toLowerCase();
+        if (role === 'manager') {
+            setSession(formData.leagueId, formData.teamId);
+            navigate('/dashboard/manager', { replace: true });
+        } else if (role === 'analyst') {
+            setSession(formData.leagueId, formData.teamId);
+            navigate('/dashboard/analyst', { replace: true });
+        } else if (role === 'admin') {
+            setSession(null, null);
+            navigate('/admin', { replace: true });
+        } else {
+            setSession(null, null);
+            navigate('/dashboard/player', { replace: true });
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             const selectedLeague = leagues.find(l => String(l.leagueId) === String(formData.leagueId));
             
             if (selectedLeague && !isLeagueActive(selectedLeague)) {
-                setError("Access Denied: Selected league is currently inactive. Access is only available ±21 days around the tournament.");
+                setError("Access Denied: Selected league is currently inactive.");
                 return;
             }
 
             const user = await login(formData.email, formData.password);
-            
-            // Set session context after successful login
-            if (user.role === 'analyst' || user.role === 'manager') {
-                 setSession(formData.leagueId, formData.teamId);
-            } else {
-                 setSession(null, null);
-            }
+            redirectUserByRole(user);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
 
-            navigate('/home', { replace: true });
+    const handleQuickDemoLogin = async (demoEmail) => {
+        try {
+            setError('');
+            const user = await login(demoEmail, 'password123');
+            redirectUserByRole(user);
         } catch (err) {
             setError(err.message);
         }
@@ -136,8 +155,6 @@ const Login = () => {
 
     const displayLeagues = validLeagues.length > 0 ? validLeagues : activeLeagues;
 
-    // Smart team filtering: if exact league mapping is missing, guess based on league name
-    // If we STILL can't find any teams, we fallback to returning ALL teams so the user is never blocked.
     const activeTeams = teams.length > 0 ? teams : DEFAULT_TEAMS;
     let filteredTeams = activeTeams.filter(t => {
         if (t.leagueIds && t.leagueIds.some(id => String(id) === String(formData.leagueId))) return true;
@@ -152,7 +169,6 @@ const Login = () => {
         return false;
     });
     
-    // Fallback: If strict matching yields 0 teams, show all teams to prevent blocking login
     if (filteredTeams.length === 0) {
         filteredTeams = activeTeams;
     }
@@ -195,31 +211,68 @@ const Login = () => {
                 {/* Right Side: Form */}
                 <div className="w-full max-w-sm">
                     {/* Back */}
-                    <Link to="/home" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white uppercase tracking-widest transition-colors mb-8">
-                        <ArrowLeft size={12} /> Back
+                    <Link to="/home" className="inline-flex items-center gap-1.5 text-[10px] font-bold text-slate-400 hover:text-slate-700 dark:hover:text-white uppercase tracking-widest transition-colors mb-6">
+                        <ArrowLeft size={12} /> Back to Public Home
                     </Link>
 
                     {/* Logo + Title */}
-                    <div className="mb-8">
-                        <div className="w-12 h-12 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl p-2.5 shadow-sm mb-5 overflow-hidden">
+                    <div className="mb-6">
+                        <div className="w-12 h-12 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl p-2.5 shadow-sm mb-4 overflow-hidden">
                             <img src="/logo.png" alt="Kinetix AI" className="w-full h-full object-contain" />
                         </div>
                         <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-1">Sign In</h2>
-                        <p className="text-sm text-slate-400">Access your performance portal</p>
+                        <p className="text-xs text-slate-400">Select your role or enter credentials</p>
+                    </div>
+
+                    {/* QUICK 1-CLICK DEMO ROLE SELECTOR */}
+                    <div className="mb-6 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] p-3 rounded-2xl shadow-sm">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                            <Zap size={11} className="text-amber-500" /> Quick Demo Role Selector
+                        </p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => handleQuickDemoLogin('manager_india@kinetix.ai')}
+                                className="flex items-center gap-1.5 px-2.5 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl text-[10px] font-bold text-blue-500 transition-all text-left"
+                            >
+                                <Shield size={12} /> Team Manager
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleQuickDemoLogin('analyst@kinetix.ai')}
+                                className="flex items-center gap-1.5 px-2.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl text-[10px] font-bold text-emerald-500 transition-all text-left"
+                            >
+                                <BarChart3 size={12} /> Data Analyst
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleQuickDemoLogin('player1@kinetix.ai')}
+                                className="flex items-center gap-1.5 px-2.5 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl text-[10px] font-bold text-purple-500 transition-all text-left"
+                            >
+                                <Activity size={12} /> Athlete / Player
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => handleQuickDemoLogin('admin@kinetix.ai')}
+                                className="flex items-center gap-1.5 px-2.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl text-[10px] font-bold text-amber-500 transition-all text-left"
+                            >
+                                <ShieldAlert size={12} /> System Admin
+                            </button>
+                        </div>
                     </div>
 
                     {/* Error */}
                     {error && (
-                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs py-2.5 px-3.5 rounded-lg mb-5 font-medium">
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs py-2.5 px-3.5 rounded-lg mb-4 font-medium">
                             {error}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-3.5">
                         
                         {/* League Selection */}
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Competition Context</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Competition Context</label>
                             <div className="relative">
                                 <Trophy className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <select 
@@ -241,7 +294,7 @@ const Login = () => {
 
                         {/* Team Selection */}
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Franchise Account</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Franchise Account</label>
                             <div className="relative">
                                 <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <select 
@@ -261,7 +314,7 @@ const Login = () => {
 
                         {/* Email */}
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Email Address</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Email Address</label>
                             <div className="relative">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <input
@@ -270,7 +323,7 @@ const Login = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     className={inputClass}
-                                    placeholder="athlete@kinetix.ai"
+                                    placeholder="manager_india@kinetix.ai"
                                     required
                                 />
                             </div>
@@ -278,7 +331,7 @@ const Login = () => {
 
                         {/* Password */}
                         <div>
-                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Password</label>
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Password</label>
                             <div className="relative">
                                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <input
@@ -311,7 +364,7 @@ const Login = () => {
                         </button>
                     </form>
 
-                    <div className="mt-6 text-center">
+                    <div className="mt-5 text-center">
                         <p className="text-xs text-slate-400">
                             New to the platform?{' '}
                             <Link to="/signup" className="text-blue-500 hover:text-blue-600 font-bold transition-colors">

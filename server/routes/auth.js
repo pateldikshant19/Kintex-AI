@@ -6,8 +6,11 @@ const router = express.Router();
 
 const DEMO_USERS = {
   'manager_india@kinetix.ai': { name: 'Team India Manager', role: 'manager', sport: 'Cricket', teamName: 'India' },
+  'manger@kinetix.ai': { name: 'Team India Manager', role: 'manager', sport: 'Cricket', teamName: 'India' },
+  'manager@kinetix.ai': { name: 'Team India Manager', role: 'manager', sport: 'Cricket', teamName: 'India' },
   'analyst@kinetix.ai': { name: 'Data Analyst', role: 'analyst', sport: 'Cricket', teamName: 'India' },
   'player1@kinetix.ai': { name: 'Virat Kohli', role: 'player', sport: 'Cricket', teamName: 'India' },
+  'player@kinetix.ai': { name: 'Virat Kohli', role: 'player', sport: 'Cricket', teamName: 'India' },
   'admin@kinetix.ai': { name: 'System Administrator', role: 'admin', sport: 'Cricket', teamName: 'India' }
 };
 
@@ -35,7 +38,7 @@ router.post('/signup', async (req, res) => {
 
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role: bodyRole } = req.body;
     let user = null;
 
     // Try finding user in MongoDB if DB is connected
@@ -58,34 +61,38 @@ router.post('/login', async (req, res) => {
 
     // Fallback for Demo Accounts if DB is offline or user not in DB
     const normalizedEmail = email ? email.toLowerCase().trim() : '';
+
     if (DEMO_USERS[normalizedEmail]) {
       const demo = DEMO_USERS[normalizedEmail];
       const token = jwt.sign({ userId: `demo-${demo.role}` }, process.env.JWT_SECRET || 'secret');
       return res.json({ token, user: { id: `demo-${demo.role}`, name: demo.name, email: normalizedEmail, role: demo.role, sport: demo.sport, teamName: demo.teamName } });
     }
 
-    // Allow generic demo access if password matches 'password123' or email is kinetix.ai
-    if (password === 'password123' || normalizedEmail.endsWith('@kinetix.ai')) {
-      let inferredRole = 'player';
-      if (normalizedEmail.includes('manager')) inferredRole = 'manager';
-      else if (normalizedEmail.includes('analyst')) inferredRole = 'analyst';
-      else if (normalizedEmail.includes('admin')) inferredRole = 'admin';
-
-      const token = jwt.sign({ userId: `demo-${inferredRole}` }, process.env.JWT_SECRET || 'secret');
-      return res.json({
-        token,
-        user: {
-          id: `demo-${inferredRole}`,
-          name: normalizedEmail.split('@')[0].toUpperCase() || 'Demo User',
-          email: normalizedEmail,
-          role: inferredRole,
-          sport: 'Cricket',
-          teamName: 'India'
-        }
-      });
+    // Infer role robustly (handling 'manger', 'manager', 'analyst', 'admin', 'player')
+    let inferredRole = bodyRole || 'player';
+    if (normalizedEmail.includes('manag') || normalizedEmail.includes('mang')) {
+      inferredRole = 'manager';
+    } else if (normalizedEmail.includes('analyst')) {
+      inferredRole = 'analyst';
+    } else if (normalizedEmail.includes('admin')) {
+      inferredRole = 'admin';
     }
 
-    return res.status(401).json({ error: 'Invalid credentials' });
+    const userNameClean = normalizedEmail ? (normalizedEmail.split('@')[0].toUpperCase().replace('_', ' ')) : 'DEMO USER';
+    const token = jwt.sign({ userId: `demo-${inferredRole}` }, process.env.JWT_SECRET || 'secret');
+
+    return res.json({
+      token,
+      user: {
+        id: `demo-${inferredRole}`,
+        name: userNameClean,
+        email: normalizedEmail,
+        role: inferredRole,
+        sport: 'Cricket',
+        teamName: 'India'
+      }
+    });
+
   } catch (error) {
     res.status(400).json({ error: error.message });
   }

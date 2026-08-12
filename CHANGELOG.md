@@ -281,3 +281,14 @@
 
 ---
 
+
+## [Commit: 9e2a3af] - Wednesday, August 12, 2026 at 11:06 AM
+**Message:** Configure role-based dashboard rendering so Manager gets Manager Command Center, Analyst gets Analyst Center, and Player gets Player Portal
+**Time Tracked Since Last Save:** ~4 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `src/pages/Dashboard.js`
+
+---
+
