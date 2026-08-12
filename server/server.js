@@ -99,27 +99,31 @@ mongoose.connection.on('reconnected', () => {
   console.log('  ✅ MongoDB reconnected successfully');
 });
 
-// ─── Start Server ────────────────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log('');
-  console.log('  ╔══════════════════════════════════════════════════════╗');
-  console.log('  ║          KINETIX AI — Backend Server                ║');
-  console.log('  ╠══════════════════════════════════════════════════════╣');
-  console.log(`  ║  🌐 Express API     : http://localhost:${PORT}          ║`);
-  console.log(`  ║  📡 Socket.IO       : ws://localhost:${PORT}            ║`);
-  console.log('  ║  🗄️  MongoDB         : Connecting...                 ║');
-  console.log('  ║  🐍 Python ML/CV    : On-demand (child_process)     ║');
-  console.log('  ║  📧 Email Service   : Standby (nodemailer)          ║');
-  console.log('  ║  📊 Visit Tracker   : Active                        ║');
-  console.log('  ╠══════════════════════════════════════════════════════╣');
-  console.log('  ║  API Routes Loaded:                                 ║');
-  console.log('  ║    /api/auth      — Login & Signup (JWT)            ║');
-  console.log('  ║    /api/players   — Player CRUD                     ║');
-  console.log('  ║    /api/analytics — Performance Analytics           ║');
-  console.log('  ║    /api/dashboard — Role-Based Dashboard            ║');
-  console.log('  ║    /api/admin     — Admin & Visit Analytics         ║');
-  console.log('  ║    /api/public    — Public Hub (No Auth)            ║');
-  console.log('  ║    /api/cricket   — Cricket AI/ML/CV Engine         ║');
-  console.log('  ╚══════════════════════════════════════════════════════╝');
-  console.log('');
-});
+// ─── Start Server / Export App ───────────────────────────────────────
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log('');
+    console.log('  ╔══════════════════════════════════════════════════════╗');
+    console.log('  ║          KINETIX AI — Backend Server                ║');
+    console.log('  ╠══════════════════════════════════════════════════════╣');
+    console.log(`  ║  🌐 Express API     : http://localhost:${PORT}          ║`);
+    console.log(`  ║  📡 Socket.IO       : ws://localhost:${PORT}            ║`);
+    console.log('  ║  🗄️  MongoDB         : Connecting...                 ║');
+    console.log('  ║  🐍 Python ML/CV    : On-demand (child_process)     ║');
+    console.log('  ║  📧 Email Service   : Standby (nodemailer)          ║');
+    console.log('  ║  📊 Visit Tracker   : Active                        ║');
+    console.log('  ╠══════════════════════════════════════════════════════╣');
+    console.log('  ║  API Routes Loaded:                                 ║');
+    console.log('  ║    /api/auth      — Login & Signup (JWT)            ║');
+    console.log('  ║    /api/players   — Player CRUD                     ║');
+    console.log('  ║    /api/analytics — Performance Analytics           ║');
+    console.log('  ║    /api/dashboard — Role-Based Dashboard            ║');
+    console.log('  ║    /api/admin     — Admin & Visit Analytics         ║');
+    console.log('  ║    /api/public    — Public Hub (No Auth)            ║');
+    console.log('  ║    /api/cricket   — Cricket AI/ML/CV Engine         ║');
+    console.log('  ╚══════════════════════════════════════════════════════╝');
+    console.log('');
+  });
+}
+
+module.exports = app;
