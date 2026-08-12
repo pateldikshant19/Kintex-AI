@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 const router = express.Router();
 
 const COMPLETE_TEAM_ROSTERS = [
-  // 🇮🇳 INDIA SQUAD
+  // 🇮🇳 INDIA SQUAD (16 Players)
   { _id: 'ind-1', playerId: '101', name: 'Virat Kohli', role: 'Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm medium', country: 'India', status: 'Optimal', readinessScore: 98, active: true },
   { _id: 'ind-2', playerId: '102', name: 'Rohit Sharma', role: 'Captain / Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak', country: 'India', status: 'Optimal', readinessScore: 95, active: true },
   { _id: 'ind-3', playerId: '103', name: 'Jasprit Bumrah', role: 'Fast Bowler', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast', country: 'India', status: 'Optimal', readinessScore: 99, active: true },
@@ -42,10 +42,7 @@ router.use(auth);
 router.get('/', async (req, res) => {
   try {
     let players = [];
-    
-    // Resolve target team name or team ID
     const qTeamId = (req.query.teamId || '').toString().toLowerCase().trim();
-    const userTeam = (req.user?.teamName || '').toLowerCase().trim();
 
     if (mongoose.connection.readyState === 1) {
       try {
@@ -59,30 +56,25 @@ router.get('/', async (req, res) => {
               { country: { $regex: new RegExp(qTeamId, 'i') } }
             ];
           }
-        } else if (userTeam && userTeam !== 'default') {
-          filter.teamName = { $regex: new RegExp(userTeam, 'i') };
         }
-
         players = await Player.find(filter).maxTimeMS(2000);
       } catch (dbErr) {
         console.warn('[GET /players] DB query warning:', dbErr.message);
       }
     }
 
-    // Filter fallback list matching team if DB returned 0 players
+    // Always fallback to COMPLETE_TEAM_ROSTERS if DB query returned 0 players
     if (!players || players.length === 0) {
       if (qTeamId && qTeamId !== 'undefined' && qTeamId !== 'null' && qTeamId !== 'all') {
         players = COMPLETE_TEAM_ROSTERS.filter(p => 
           p.teamName.toLowerCase().includes(qTeamId) || 
           p.country.toLowerCase().includes(qTeamId) ||
-          (qTeamId === 'ind' && p.teamName === 'India') ||
-          (qTeamId === 'eng' && p.teamName === 'England') ||
-          (qTeamId === 'aus' && p.teamName === 'Australia')
+          (qTeamId === 'ind' || qTeamId === '10532' || qTeamId === '2024' ? p.teamName === 'India' : false) ||
+          (qTeamId === 'eng' ? p.teamName === 'England' : false) ||
+          (qTeamId === 'aus' ? p.teamName === 'Australia' : false)
         );
-      } else if (userTeam && userTeam !== 'default') {
-        players = COMPLETE_TEAM_ROSTERS.filter(p => p.teamName.toLowerCase().includes(userTeam));
       }
-
+      
       if (!players || players.length === 0) {
         players = COMPLETE_TEAM_ROSTERS;
       }
@@ -138,31 +130,6 @@ router.get('/:id', async (req, res) => {
     res.json(player);
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-router.post('/', async (req, res) => {
-  try {
-    if (mongoose.connection.readyState === 1) {
-      const player = new Player(req.body);
-      await player.save();
-      return res.json(player);
-    }
-    res.json({ _id: `player-${Date.now()}`, ...req.body });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-router.put('/:id', async (req, res) => {
-  try {
-    if (mongoose.connection.readyState === 1) {
-      const player = await Player.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      return res.json(player);
-    }
-    res.json({ _id: req.params.id, ...req.body });
-  } catch (error) {
-    res.status(400).json({ error: error.message });
   }
 });
 

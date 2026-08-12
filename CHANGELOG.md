@@ -317,3 +317,15 @@
 
 ---
 
+
+## [Commit: cd26578] - Wednesday, August 12, 2026 at 11:15 AM
+**Message:** Populate full squad roster (16 India squad players + Australia + England) and fix team filter in Players page and server API
+**Time Tracked Since Last Save:** ~2 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `server/routes/players.js`
+- **Modified:** `src/pages/Players.js`
+
+---
+
