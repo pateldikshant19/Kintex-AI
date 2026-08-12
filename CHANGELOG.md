@@ -196,3 +196,17 @@
 
 ---
 
+
+## [Commit: c339e9e] - Wednesday, August 12, 2026 at 10:45 AM
+**Message:** Add maxTimeMS database query timeout and fallback handlers for login and dashboard
+**Time Tracked Since Last Save:** ~29 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `server/routes/auth.js`
+- **Modified:** `server/routes/dashboard.js`
+- **Modified:** `server/seed_users.js`
+- **Modified:** `server/server.js`
+
+---
+
