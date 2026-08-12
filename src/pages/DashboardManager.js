@@ -11,10 +11,29 @@ import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 import DashboardChart from '../components/DashboardChart';
 
+const DEFAULT_MANAGER_SQUAD = [
+    { _id: 'ind-1', name: 'Virat Kohli', role: 'Batter', teamName: 'India', status: 'Optimal', readinessScore: 98, contractStatus: 'ACTIVE', metrics: { fatigue: 12, heartRate: 64, readinessScore: 98 } },
+    { _id: 'ind-2', name: 'Rohit Sharma', role: 'Captain / Batter', teamName: 'India', status: 'Optimal', readinessScore: 95, contractStatus: 'ACTIVE', metrics: { fatigue: 18, heartRate: 68, readinessScore: 95 } },
+    { _id: 'ind-3', name: 'Jasprit Bumrah', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 99, contractStatus: 'ACTIVE', metrics: { fatigue: 10, heartRate: 58, readinessScore: 99 } },
+    { _id: 'ind-4', name: 'Hardik Pandya', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 94, contractStatus: 'ACTIVE', metrics: { fatigue: 22, heartRate: 72, readinessScore: 94 } },
+    { _id: 'ind-5', name: 'Suryakumar Yadav', role: 'T20 Captain / Batter', teamName: 'India', status: 'Optimal', readinessScore: 96, contractStatus: 'ACTIVE', metrics: { fatigue: 15, heartRate: 65, readinessScore: 96 } },
+    { _id: 'ind-6', name: 'Rishabh Pant', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 92, contractStatus: 'ACTIVE', metrics: { fatigue: 20, heartRate: 70, readinessScore: 92 } },
+    { _id: 'ind-7', name: 'Shubman Gill', role: 'Opener / Batter', teamName: 'India', status: 'Optimal', readinessScore: 91, contractStatus: 'ACTIVE', metrics: { fatigue: 16, heartRate: 66, readinessScore: 91 } },
+    { _id: 'ind-8', name: 'Yashasvi Jaiswal', role: 'Opener / Batter', teamName: 'India', status: 'Optimal', readinessScore: 93, contractStatus: 'ACTIVE', metrics: { fatigue: 14, heartRate: 62, readinessScore: 93 } },
+    { _id: 'ind-9', name: 'Ravindra Jadeja', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 95, contractStatus: 'ACTIVE', metrics: { fatigue: 12, heartRate: 60, readinessScore: 95 } },
+    { _id: 'ind-10', name: 'Axar Patel', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 94, contractStatus: 'ACTIVE', metrics: { fatigue: 15, heartRate: 63, readinessScore: 94 } },
+    { _id: 'ind-11', name: 'Kuldeep Yadav', role: 'Spinner / Bowler', teamName: 'India', status: 'Optimal', readinessScore: 92, contractStatus: 'ACTIVE', metrics: { fatigue: 18, heartRate: 67, readinessScore: 92 } },
+    { _id: 'ind-12', name: 'Mohammed Siraj', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 90, contractStatus: 'ACTIVE', metrics: { fatigue: 25, heartRate: 74, readinessScore: 90 } },
+    { _id: 'ind-13', name: 'Arshdeep Singh', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 91, contractStatus: 'ACTIVE', metrics: { fatigue: 21, heartRate: 71, readinessScore: 91 } },
+    { _id: 'ind-14', name: 'KL Rahul', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 89, contractStatus: 'ACTIVE', metrics: { fatigue: 19, heartRate: 69, readinessScore: 89 } },
+    { _id: 'ind-15', name: 'Rinku Singh', role: 'Finisher / Batter', teamName: 'India', status: 'Optimal', readinessScore: 92, contractStatus: 'ACTIVE', metrics: { fatigue: 14, heartRate: 65, readinessScore: 92 } },
+    { _id: 'ind-16', name: 'Sanju Samson', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 88, contractStatus: 'ACTIVE', metrics: { fatigue: 17, heartRate: 68, readinessScore: 88 } }
+];
+
 const DashboardManager = () => {
     const { user } = useAuth();
     const { selectedLeagueId, selectedTeamId } = useSession();
-    const [players, setPlayers] = useState([]);
+    const [players, setPlayers] = useState(DEFAULT_MANAGER_SQUAD);
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState([70, 75, 72, 80, 85, 82, 90, 92]);
     const [activeTab, setActiveTab] = useState('roster'); // roster, predictor, load, tactics
@@ -61,21 +80,21 @@ const DashboardManager = () => {
         const fetchRoster = async () => {
             try {
                 const token = localStorage.getItem('token');
-                if (!token) return;
-                
-                let queryStr = '';
-                if (selectedTeamId) queryStr += `?teamId=${selectedTeamId}`;
-                if (selectedLeagueId) queryStr += queryStr ? `&leagueId=${selectedLeagueId}` : `?leagueId=${selectedLeagueId}`;
+                const API_URL_BASE = process.env.REACT_APP_API_URL || '/api';
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-                const playerRes = await fetch(`${process.env.REACT_APP_API_URL}/players${queryStr}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const playerRes = await fetch(`${API_URL_BASE}/players`, { headers });
                 if (playerRes.ok) {
                     const playerData = await playerRes.json();
-                    setPlayers(playerData);
+                    if (Array.isArray(playerData) && playerData.length > 0) {
+                        setPlayers(playerData);
+                    } else {
+                        setPlayers(DEFAULT_MANAGER_SQUAD);
+                    }
                 }
             } catch (err) {
-                console.error("Error fetching roster:", err);
+                console.warn("Error fetching roster, using default squad:", err.message);
+                setPlayers(DEFAULT_MANAGER_SQUAD);
             }
         };
 

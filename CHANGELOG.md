@@ -329,3 +329,15 @@
 
 ---
 
+
+## [Commit: 6d6c2d8] - Wednesday, August 12, 2026 at 11:19 AM
+**Message:** Guarantee all team squad players (Virat Kohli, Rohit Sharma, Jasprit Bumrah, Hardik Pandya, etc.) are always visible on Players page
+**Time Tracked Since Last Save:** ~4 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `server/routes/players.js`
+- **Modified:** `src/pages/Players.js`
+
+---
+

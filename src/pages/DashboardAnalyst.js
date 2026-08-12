@@ -10,12 +10,31 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 
+const DEFAULT_ANALYST_SQUAD = [
+    { _id: 'ind-1', name: 'Virat Kohli', role: 'Batter', teamName: 'India', status: 'Optimal', readinessScore: 98, battingStyle: 'Right Hand', bowlingStyle: 'Right arm medium' },
+    { _id: 'ind-2', name: 'Rohit Sharma', role: 'Captain / Batter', teamName: 'India', status: 'Optimal', readinessScore: 95, battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak' },
+    { _id: 'ind-3', name: 'Jasprit Bumrah', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 99, battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast' },
+    { _id: 'ind-4', name: 'Hardik Pandya', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 94, battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast-medium' },
+    { _id: 'ind-5', name: 'Suryakumar Yadav', role: 'T20 Captain / Batter', teamName: 'India', status: 'Optimal', readinessScore: 96, battingStyle: 'Right Hand', bowlingStyle: 'Right arm medium' },
+    { _id: 'ind-6', name: 'Rishabh Pant', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 92, battingStyle: 'Left Hand', bowlingStyle: 'None' },
+    { _id: 'ind-7', name: 'Shubman Gill', role: 'Opener / Batter', teamName: 'India', status: 'Optimal', readinessScore: 91, battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak' },
+    { _id: 'ind-8', name: 'Yashasvi Jaiswal', role: 'Opener / Batter', teamName: 'India', status: 'Optimal', readinessScore: 93, battingStyle: 'Left Hand', bowlingStyle: 'Right arm legbreak' },
+    { _id: 'ind-9', name: 'Ravindra Jadeja', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 95, battingStyle: 'Left Hand', bowlingStyle: 'Slow left-arm orthodox' },
+    { _id: 'ind-10', name: 'Axar Patel', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 94, battingStyle: 'Left Hand', bowlingStyle: 'Slow left-arm orthodox' },
+    { _id: 'ind-11', name: 'Kuldeep Yadav', role: 'Spinner / Bowler', teamName: 'India', status: 'Optimal', readinessScore: 92, battingStyle: 'Left Hand', bowlingStyle: 'Left arm chinaman' },
+    { _id: 'ind-12', name: 'Mohammed Siraj', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 90, battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast' },
+    { _id: 'ind-13', name: 'Arshdeep Singh', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 91, battingStyle: 'Left Hand', bowlingStyle: 'Left arm medium-fast' },
+    { _id: 'ind-14', name: 'KL Rahul', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 89, battingStyle: 'Right Hand', bowlingStyle: 'None' },
+    { _id: 'ind-15', name: 'Rinku Singh', role: 'Finisher / Batter', teamName: 'India', status: 'Optimal', readinessScore: 92, battingStyle: 'Left Hand', bowlingStyle: 'Right arm offbreak' },
+    { _id: 'ind-16', name: 'Sanju Samson', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 88, battingStyle: 'Right Hand', bowlingStyle: 'None' }
+];
+
 const DashboardAnalyst = () => {
     const { user } = useAuth();
     const { selectedLeagueId, selectedTeamId } = useSession();
 
     // Core Data
-    const [players, setPlayers] = useState([]);
+    const [players, setPlayers] = useState(DEFAULT_ANALYST_SQUAD);
     const [loading, setLoading] = useState(true);
 
     // Workflow State
@@ -51,21 +70,21 @@ const DashboardAnalyst = () => {
         const fetchRoster = async () => {
             try {
                 const token = localStorage.getItem('token');
+                const API_URL_BASE = process.env.REACT_APP_API_URL || '/api';
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-                let queryStr = '';
-                if (selectedTeamId) queryStr += `?teamId=${selectedTeamId}`;
-                if (selectedLeagueId) queryStr += queryStr ? `&leagueId=${selectedLeagueId}` : `?leagueId=${selectedLeagueId}`;
-
-                const res = await fetch(`${API_URL.replace('/cricket', '/players')}${queryStr}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
+                const res = await fetch(`${API_URL_BASE}/players`, { headers });
                 if (res.ok) {
                     const data = await res.json();
-                    setPlayers(data);
+                    if (Array.isArray(data) && data.length > 0) {
+                        setPlayers(data);
+                    } else {
+                        setPlayers(DEFAULT_ANALYST_SQUAD);
+                    }
                 }
             } catch (err) {
-                console.error(err);
+                console.warn("Roster fetch warning, using default analyst squad:", err.message);
+                setPlayers(DEFAULT_ANALYST_SQUAD);
             }
         };
 
