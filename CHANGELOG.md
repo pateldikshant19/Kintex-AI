@@ -246,3 +246,14 @@
 
 ---
 
+
+## [Commit: 017a5a5] - Wednesday, August 12, 2026 at 10:52 AM
+**Message:** Replace fictional team name Rockets with real team opponent vs Australia
+**Time Tracked Since Last Save:** ~2 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `src/pages/DashboardPlayer.js`
+
+---
+
