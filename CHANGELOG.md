@@ -341,3 +341,15 @@
 
 ---
 
+
+## [Commit: 0a8c4b8] - Wednesday, August 12, 2026 at 11:23 AM
+**Message:** Initialize default 16-player squad arrays in DashboardManager and DashboardAnalyst so player names and details are always displayed
+**Time Tracked Since Last Save:** ~3 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `src/pages/DashboardAnalyst.js`
+- **Modified:** `src/pages/DashboardManager.js`
+
+---
+
