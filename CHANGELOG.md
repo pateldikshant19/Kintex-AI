@@ -269,3 +269,15 @@
 
 ---
 
+
+## [Commit: 9496e6b] - Wednesday, August 12, 2026 at 11:01 AM
+**Message:** Make Personal Trajectory chart 100% dynamic with LATEST vs SEASON tabs, tooltips, and real match datasets
+**Time Tracked Since Last Save:** ~2 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `src/components/DashboardChart.js`
+- **Modified:** `src/pages/DashboardPlayer.js`
+
+---
+
