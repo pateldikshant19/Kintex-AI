@@ -20,12 +20,13 @@ async function seed() {
   const salt = await bcrypt.genSalt(10);
   const hash = await bcrypt.hash('password123', salt);
 
-  await User.deleteMany({ email: { $in: ['manager_india@kinetix.ai', 'analyst@kinetix.ai', 'player1@kinetix.ai'] } });
+  await User.deleteMany({ email: { $in: ['manager_india@kinetix.ai', 'analyst@kinetix.ai', 'player1@kinetix.ai', 'admin@kinetix.ai'] } });
 
   await User.insertMany([
     { name: 'Team India Manager', email: 'manager_india@kinetix.ai', password: hash, role: 'manager', sport: 'Cricket' },
     { name: 'Data Analyst', email: 'analyst@kinetix.ai', password: hash, role: 'analyst', sport: 'Cricket' },
-    { name: 'Virat Kohli', email: 'player1@kinetix.ai', password: hash, role: 'player', sport: 'Cricket' }
+    { name: 'Virat Kohli', email: 'player1@kinetix.ai', password: hash, role: 'player', sport: 'Cricket' },
+    { name: 'System Administrator', email: 'admin@kinetix.ai', password: hash, role: 'admin', sport: 'Cricket' }
   ]);
 
   console.log('Users created successfully');

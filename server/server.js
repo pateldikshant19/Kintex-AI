@@ -77,26 +77,28 @@ app.use('/api/cricket', require('./routes/cricket'));
 app.use('/api/injury-intelligence', require('./routes/injuryIntelligence'));
 
 // ─── MongoDB Connection ─────────────────────────────────────────────
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sport-analytics';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sport-analytics';
 
-mongoose.connect(MONGODB_URI)
-  .then(() => {
+const connectDB = async () => {
+  if (mongoose.connection.readyState === 1) return;
+  try {
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
     console.log('  ✅ MongoDB connected successfully');
     console.log(`     └─ URI: ${MONGODB_URI.replace(/\/\/.*@/, '//***@')}`);
-  })
-  .catch((err) => {
+  } catch (err) {
     console.error('  ❌ MongoDB connection FAILED:', err.message);
-    console.error('     └─ The server will continue running but database operations will fail.');
-    console.error('     └─ Make sure MongoDB is running: mongod --dbpath <your-data-path>');
-  });
+    console.error('     └─ Retrying MongoDB connection in 5 seconds...');
+    setTimeout(connectDB, 5000);
+  }
+};
 
-// Handle MongoDB disconnection after initial connect
+connectDB();
+
 mongoose.connection.on('disconnected', () => {
-  console.warn('  ⚠️  MongoDB disconnected. Attempting to reconnect...');
-});
-
-mongoose.connection.on('reconnected', () => {
-  console.log('  ✅ MongoDB reconnected successfully');
+  console.warn('  ⚠️  MongoDB disconnected. Reconnecting...');
+  setTimeout(connectDB, 3000);
 });
 
 // ─── Start Server / Export App ───────────────────────────────────────
