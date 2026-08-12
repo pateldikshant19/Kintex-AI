@@ -304,3 +304,16 @@
 
 ---
 
+
+## [Commit: 88404bf] - Wednesday, August 12, 2026 at 11:12 AM
+**Message:** Enforce strict role normalization in AuthContext and add direct role dashboard links in Navbar and ProfileDropdown
+**Time Tracked Since Last Save:** ~3 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `src/components/Navbar.js`
+- **Modified:** `src/components/ProfileDropdown.js`
+- **Modified:** `src/context/AuthContext.js`
+
+---
+

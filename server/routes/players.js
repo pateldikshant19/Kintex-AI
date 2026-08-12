@@ -5,11 +5,36 @@ const Player = require('../models/Player');
 const auth = require('../middleware/auth');
 const router = express.Router();
 
-const DEFAULT_PLAYERS_FALLBACK = [
-  { _id: 'player-1', playerId: '101', name: 'Virat Kohli', role: 'Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm medium', country: 'India', active: true, retired: false },
-  { _id: 'player-2', playerId: '102', name: 'Jasprit Bumrah', role: 'Bowler', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast', country: 'India', active: true, retired: false },
-  { _id: 'player-3', playerId: '103', name: 'Rohit Sharma', role: 'Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak', country: 'India', active: true, retired: false },
-  { _id: 'player-4', playerId: '104', name: 'Hardik Pandya', role: 'All Rounder', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast-medium', country: 'India', active: true, retired: false }
+const COMPLETE_TEAM_ROSTERS = [
+  // 🇮🇳 INDIA SQUAD
+  { _id: 'ind-1', playerId: '101', name: 'Virat Kohli', role: 'Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm medium', country: 'India', status: 'Optimal', readinessScore: 98, active: true },
+  { _id: 'ind-2', playerId: '102', name: 'Rohit Sharma', role: 'Captain / Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak', country: 'India', status: 'Optimal', readinessScore: 95, active: true },
+  { _id: 'ind-3', playerId: '103', name: 'Jasprit Bumrah', role: 'Fast Bowler', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast', country: 'India', status: 'Optimal', readinessScore: 99, active: true },
+  { _id: 'ind-4', playerId: '104', name: 'Hardik Pandya', role: 'All Rounder', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast-medium', country: 'India', status: 'Optimal', readinessScore: 94, active: true },
+  { _id: 'ind-5', playerId: '105', name: 'Suryakumar Yadav', role: 'T20 Captain / Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm medium', country: 'India', status: 'Optimal', readinessScore: 96, active: true },
+  { _id: 'ind-6', playerId: '106', name: 'Rishabh Pant', role: 'Wicket-Keeper Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'None', country: 'India', status: 'Optimal', readinessScore: 92, active: true },
+  { _id: 'ind-7', playerId: '107', name: 'Shubman Gill', role: 'Opener / Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak', country: 'India', status: 'Optimal', readinessScore: 91, active: true },
+  { _id: 'ind-8', playerId: '108', name: 'Yashasvi Jaiswal', role: 'Opener / Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Right arm legbreak', country: 'India', status: 'Optimal', readinessScore: 93, active: true },
+  { _id: 'ind-9', playerId: '109', name: 'Ravindra Jadeja', role: 'All Rounder', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Slow left-arm orthodox', country: 'India', status: 'Optimal', readinessScore: 95, active: true },
+  { _id: 'ind-10', playerId: '110', name: 'Axar Patel', role: 'All Rounder', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Slow left-arm orthodox', country: 'India', status: 'Optimal', readinessScore: 94, active: true },
+  { _id: 'ind-11', playerId: '111', name: 'Kuldeep Yadav', role: 'Spinner / Bowler', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Left arm chinaman', country: 'India', status: 'Optimal', readinessScore: 92, active: true },
+  { _id: 'ind-12', playerId: '112', name: 'Mohammed Siraj', role: 'Fast Bowler', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast', country: 'India', status: 'Optimal', readinessScore: 90, active: true },
+  { _id: 'ind-13', playerId: '113', name: 'Arshdeep Singh', role: 'Fast Bowler', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Left arm medium-fast', country: 'India', status: 'Optimal', readinessScore: 91, active: true },
+  { _id: 'ind-14', playerId: '114', name: 'KL Rahul', role: 'Wicket-Keeper Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'None', country: 'India', status: 'Optimal', readinessScore: 89, active: true },
+  { _id: 'ind-15', playerId: '115', name: 'Rinku Singh', role: 'Finisher / Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Right arm offbreak', country: 'India', status: 'Optimal', readinessScore: 92, active: true },
+  { _id: 'ind-16', playerId: '116', name: 'Sanju Samson', role: 'Wicket-Keeper Batter', teamName: 'India', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'None', country: 'India', status: 'Optimal', readinessScore: 88, active: true },
+
+  // 🇦🇺 AUSTRALIA SQUAD
+  { _id: 'aus-1', playerId: '201', name: 'Pat Cummins', role: 'Captain / Bowler', teamName: 'Australia', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast', country: 'Australia', status: 'Optimal', readinessScore: 97, active: true },
+  { _id: 'aus-2', playerId: '202', name: 'Travis Head', role: 'Batter', teamName: 'Australia', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Right arm offbreak', country: 'Australia', status: 'Optimal', readinessScore: 96, active: true },
+  { _id: 'aus-3', playerId: '203', name: 'Mitchell Starc', role: 'Fast Bowler', teamName: 'Australia', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Left arm fast', country: 'Australia', status: 'Optimal', readinessScore: 95, active: true },
+  { _id: 'aus-4', playerId: '204', name: 'Steve Smith', role: 'Batter', teamName: 'Australia', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm legbreak', country: 'Australia', status: 'Optimal', readinessScore: 94, active: true },
+  { _id: 'aus-5', playerId: '205', name: 'Glenn Maxwell', role: 'All Rounder', teamName: 'Australia', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm offbreak', country: 'Australia', status: 'Optimal', readinessScore: 93, active: true },
+
+  // 🏴󠁧󠁢󠁥󠁮󠁧󠁿 ENGLAND SQUAD
+  { _id: 'eng-1', playerId: '301', name: 'Jos Buttler', role: 'Captain / Wicket-Keeper', teamName: 'England', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'None', country: 'England', status: 'Optimal', readinessScore: 96, active: true },
+  { _id: 'eng-2', playerId: '302', name: 'Ben Stokes', role: 'All Rounder', teamName: 'England', sport: 'Cricket', battingStyle: 'Left Hand', bowlingStyle: 'Right arm fast-medium', country: 'England', status: 'Optimal', readinessScore: 95, active: true },
+  { _id: 'eng-3', playerId: '303', name: 'Jofra Archer', role: 'Fast Bowler', teamName: 'England', sport: 'Cricket', battingStyle: 'Right Hand', bowlingStyle: 'Right arm fast', country: 'England', status: 'Optimal', readinessScore: 94, active: true }
 ];
 
 router.use(auth);
@@ -17,21 +42,25 @@ router.use(auth);
 router.get('/', async (req, res) => {
   try {
     let players = [];
+    
+    // Resolve target team name or team ID
+    const qTeamId = (req.query.teamId || '').toString().toLowerCase().trim();
+    const userTeam = (req.user?.teamName || '').toLowerCase().trim();
+
     if (mongoose.connection.readyState === 1) {
       try {
-        let filter = { active: true, retired: false };
-
-        if (req.user?.role === 'player' || req.user?.role === 'athlete') {
-          filter.email = req.user.email;
-        } else if (req.user?.role === 'manager' || req.user?.role === 'analyst') {
-          const qTeamId = req.query.teamId !== 'undefined' && req.query.teamId !== 'null' ? req.query.teamId : null;
-          if (qTeamId) {
+        let filter = { active: true };
+        if (qTeamId && qTeamId !== 'undefined' && qTeamId !== 'null' && qTeamId !== 'all') {
+          if (!isNaN(Number(qTeamId))) {
             filter.currentTeamId = Number(qTeamId);
-          } else if (req.user.teamName && req.user.teamName !== 'DEFAULT') {
-            filter.teamName = { $regex: new RegExp(`^${req.user.teamName}$`, 'i') };
-          } else if (req.user.sport) {
-            filter.sport = req.user.sport;
+          } else {
+            filter.$or = [
+              { teamName: { $regex: new RegExp(qTeamId, 'i') } },
+              { country: { $regex: new RegExp(qTeamId, 'i') } }
+            ];
           }
+        } else if (userTeam && userTeam !== 'default') {
+          filter.teamName = { $regex: new RegExp(userTeam, 'i') };
         }
 
         players = await Player.find(filter).maxTimeMS(2000);
@@ -40,9 +69,28 @@ router.get('/', async (req, res) => {
       }
     }
 
-    res.json(players.length > 0 ? players : DEFAULT_PLAYERS_FALLBACK);
+    // Filter fallback list matching team if DB returned 0 players
+    if (!players || players.length === 0) {
+      if (qTeamId && qTeamId !== 'undefined' && qTeamId !== 'null' && qTeamId !== 'all') {
+        players = COMPLETE_TEAM_ROSTERS.filter(p => 
+          p.teamName.toLowerCase().includes(qTeamId) || 
+          p.country.toLowerCase().includes(qTeamId) ||
+          (qTeamId === 'ind' && p.teamName === 'India') ||
+          (qTeamId === 'eng' && p.teamName === 'England') ||
+          (qTeamId === 'aus' && p.teamName === 'Australia')
+        );
+      } else if (userTeam && userTeam !== 'default') {
+        players = COMPLETE_TEAM_ROSTERS.filter(p => p.teamName.toLowerCase().includes(userTeam));
+      }
+
+      if (!players || players.length === 0) {
+        players = COMPLETE_TEAM_ROSTERS;
+      }
+    }
+
+    res.json(players);
   } catch (error) {
-    res.json(DEFAULT_PLAYERS_FALLBACK);
+    res.json(COMPLETE_TEAM_ROSTERS);
   }
 });
 
@@ -58,7 +106,7 @@ router.get('/:id', async (req, res) => {
     }
 
     if (!player) {
-      player = DEFAULT_PLAYERS_FALLBACK.find(p => p._id === req.params.id || p.playerId === req.params.id) || DEFAULT_PLAYERS_FALLBACK[0];
+      player = COMPLETE_TEAM_ROSTERS.find(p => p._id === req.params.id || p.playerId === req.params.id) || COMPLETE_TEAM_ROSTERS[0];
     }
 
     let careerStats = null;
