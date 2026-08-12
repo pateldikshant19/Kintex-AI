@@ -35,8 +35,10 @@ const DashboardPlayer = () => {
 
                     {/* Next match pill */}
                     <div className="flex-shrink-0 text-center px-6 py-4 bg-slate-50 dark:bg-[#0a0a0c] border border-slate-200 dark:border-[#1e1e2a] rounded-xl">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Next Mission</p>
-                        <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">vs Rockets</p>
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Next Fixture</p>
+                        <p className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                            {user?.teamName === 'England' ? 'vs Australia' : user?.teamName === 'Australia' ? 'vs India' : 'vs Australia'}
+                        </p>
                         <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">Tomorrow</span>
                     </div>
                 </div>
