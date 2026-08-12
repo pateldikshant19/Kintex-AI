@@ -292,3 +292,15 @@
 
 ---
 
+
+## [Commit: 99e68e0] - Wednesday, August 12, 2026 at 11:09 AM
+**Message:** Add Quick Demo Role Selector on Login page and fix role detection for manager/manger spelling
+**Time Tracked Since Last Save:** ~3 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Modified:** `server/routes/auth.js`
+- **Modified:** `src/pages/Login.js`
+
+---
+

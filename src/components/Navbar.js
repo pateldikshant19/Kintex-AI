@@ -66,7 +66,12 @@ const Navbar = () => {
                <Link to="/home" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${location.pathname === '/home' || location.pathname === '/' ? 'text-blue-500' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
                  Home
                </Link>
-               <Link to="/players" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${location.pathname.includes('/player') ? 'text-blue-500' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
+               {user && (
+                 <Link to="/dashboard" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${location.pathname.includes('/dashboard') ? 'text-blue-500' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
+                   Dashboard
+                 </Link>
+               )}
+               <Link to="/players" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${location.pathname.includes('/player') && !location.pathname.includes('/dashboard') ? 'text-blue-500' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
                  Players
                </Link>
                <Link to="/teams" className={`text-[10px] font-black uppercase tracking-widest transition-colors ${location.pathname.includes('/team') ? 'text-blue-500' : 'text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}>
@@ -98,32 +103,23 @@ const Navbar = () => {
 
             <NotificationDropdown />
             
-            <div className="w-px h-5 bg-slate-200 dark:bg-[#1e1e2a] mx-1"></div>
-            
             <ThemeToggle />
-            
-            <button 
-              onClick={() => setIsSettingsOpen(true)}
-              className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-[#1a1a24]"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
 
             {user ? (
-              <div className="ml-1">
-                <ProfileDropdown 
-                  user={user} 
-                  logout={logout} 
-                  onOpenSettings={() => setIsSettingsOpen(true)} 
-                />
-              </div>
+              <ProfileDropdown user={user} logout={logout} onOpenSettings={() => setIsSettingsOpen(true)} />
             ) : (
-              <div className="flex items-center gap-2 ml-2">
+              <div className="flex items-center gap-2">
                 <Link
                   to="/login"
-                  className="px-4 py-1.5 text-xs font-bold uppercase tracking-wider bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
+                  className="px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors uppercase tracking-wider"
                 >
-                  Login
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm uppercase tracking-wider"
+                >
+                  Get Started
                 </Link>
               </div>
             )}
@@ -131,41 +127,10 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Drawer Menu */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-[#0a0a0c] border-b border-slate-200 dark:border-[#1e1e2a] px-6 py-4 space-y-3 z-30 shadow-lg">
-          <Link
-            to="/home"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:text-blue-500 py-1.5"
-          >
-            Home
-          </Link>
-          <Link
-            to="/players"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:text-blue-500 py-1.5"
-          >
-            Players
-          </Link>
-          <Link
-            to="/teams"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:text-blue-500 py-1.5"
-          >
-            Teams
-          </Link>
-          <Link
-            to="/analytics"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="block text-xs font-black uppercase tracking-widest text-slate-700 dark:text-slate-200 hover:text-blue-500 py-1.5"
-          >
-            Public Reports
-          </Link>
-        </div>
-      )}
-
+      {/* Global Search Modal */}
       <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
+      {/* Public Settings Modal */}
       <PublicSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   );
