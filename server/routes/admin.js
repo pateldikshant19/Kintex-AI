@@ -20,29 +20,31 @@ const isAdmin = (req, res, next) => {
 };
 
 // Tracking endpoint (Accessible publicly for visitor analytics)
-router.post('/track', async (req, res) => {
+router.post('/track', (req, res) => {
     try {
         const { path, userAgent } = req.body;
-        let userId = null;
-        const token = req.headers['authorization']?.split(' ')[1];
-        if (token) {
-            try {
-                const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET || 'secret');
-                userId = decoded.userId;
-            } catch (e) { }
-        }
+        if (mongoose.connection.readyState === 1) {
+            let userId = null;
+            const token = req.headers['authorization']?.split(' ')[1];
+            if (token) {
+                try {
+                    const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET || 'secret');
+                    userId = decoded.userId;
+                } catch (e) { }
+            }
 
-        const visit = new Visit({
-            ip: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
-            userAgent: userAgent || req.headers['user-agent'] || 'Unknown Browser',
-            path: path || '/',
-            userId: userId
-        });
-        await visit.save();
-        res.status(200).send('ok');
+            const visit = new Visit({
+                ip: req.ip || req.headers['x-forwarded-for'] || '127.0.0.1',
+                userAgent: userAgent || req.headers['user-agent'] || 'Unknown Browser',
+                path: path || '/',
+                userId: userId
+            });
+            visit.save({ maxTimeMS: 2000 }).catch(err => console.warn('Track save skipped:', err.message));
+        }
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.warn('Track error skipped:', error.message);
     }
+    res.status(200).send('ok');
 });
 
 // Require authentication and admin authorization for all endpoints below

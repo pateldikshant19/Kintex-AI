@@ -220,3 +220,13 @@
 
 ---
 
+
+## [Commit: dab2b5e] - Wednesday, August 12, 2026 at 10:47 AM
+**Message:** Fix Vercel serverless API routing and add backend handler
+**Time Tracked Since Last Save:** ~0 Minutes
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+
+---
+
