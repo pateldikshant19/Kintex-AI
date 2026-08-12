@@ -43,6 +43,17 @@ body {
   color: #e8e8ec;
 }
 
+/* ------ NATIVE SELECT OPTION STYLING ------ */
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.dark select option {
+  background-color: #13131a !important;
+  color: #f8fafc !important;
+}
+
 #root {
   display: flex;
   flex-direction: column;

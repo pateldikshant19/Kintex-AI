@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['manager', 'athlete', 'analyst', 'player'], required: true },
+  role: { type: String, enum: ['admin', 'manager', 'athlete', 'analyst', 'player'], required: true },
   sport: { type: String, required: true },
   teamName: { type: String }, // For identifying the organization/team
   lastLogin: { type: Date },

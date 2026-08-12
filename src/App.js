@@ -20,6 +20,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Landing from './pages/Landing';
 import Developers from './pages/Developers';
 import AdminAnalytics from './pages/AdminAnalytics';
+import AdminPanel from './pages/AdminPanel';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import PlayerBio from './pages/PlayerBio';
 import PublicHubApp from './public-hub/PublicHubApp'; // Import the new Public Hub module
@@ -82,6 +83,10 @@ function MainLayout() {
 
           <Route element={<ProtectedRoute allowedRoles={['manager']} />}>
             <Route path="/dashboard/manager" element={<DashboardManager />} />
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={['admin', 'manager']} />}>
+            <Route path="/admin" element={<AdminPanel />} />
           </Route>
 
         </Routes>

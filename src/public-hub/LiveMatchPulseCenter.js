@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Star, Grid, List, ChevronDown, ChevronRight, Activity, Users } from 'lucide-react';
+import apiService from '../utils/apiService';
 
 const LiveMatchPulseCenter = ({ onSelectMatch }) => {
     const [matches, setMatches] = useState([]);
@@ -8,58 +9,85 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
     useEffect(() => {
         const fetchMatches = async () => {
             try {
-                // Using dummy data combined with real API if available, but for visual mockup we need specific structure
-                const dummyMatches = [
-                    {
-                        id: 'm1', sport: 'Cricket', matchup: 'Matchup',
-                        phase: 'DAY 1 - STUMPS', isLive: true,
-                        teamA: 'Jabalpur Royal Lions', teamA_Score: '218/8', teamA_Overs: '(54.0 ov)',
-                        teamB: 'Malwa Stallions', teamB_Score: '-', teamB_Overs: '',
-                        statusText: 'Jabalpur Royal Lions won by 54 runs',
-                        probA: 78, probB: 22, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                    },
-                    {
-                        id: 'm2', sport: 'Cricket', matchup: 'Matchup',
-                        phase: 'DAY 1 - STUMPS - SUSSEX TRAIL BY 19 RUNS', isLive: true,
-                        teamA: 'Glamorgan', teamA_Score: '246/9d', teamA_Overs: '(90.0 ov)',
-                        teamB: 'Sussex', teamB_Score: '227/10', teamB_Overs: '(76.1 ov)',
-                        statusText: 'Sussex trail by 19 runs',
-                        probA: 48, probB: 52, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                    },
-                    {
-                        id: 'm3', sport: 'Cricket', matchup: 'Matchup',
-                        phase: 'DAY 1 - STUMPS', isLive: true,
-                        teamA: 'Yorkshire', teamA_Score: '305/7', teamA_Overs: '(90.0 ov)',
-                        teamB: 'Warwickshire', teamB_Score: '-', teamB_Overs: '',
-                        statusText: 'Yorkshire lead by 305 runs',
-                        probA: 82, probB: 18, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                    },
-                    {
-                        id: 'm4', sport: 'Cricket', matchup: 'Matchup',
-                        phase: 'DAY 1 - STUMPS', isLive: true,
-                        teamA: 'Somerset', teamA_Score: '256/7', teamA_Overs: '(90.0 ov)',
-                        teamB: 'Nottinghamshire', teamB_Score: '-', teamB_Overs: '',
-                        statusText: 'Somerset lead by 256 runs',
-                        probA: 74, probB: 26, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                    },
-                    {
-                        id: 'm5', sport: 'Cricket', matchup: 'Matchup',
-                        phase: 'DAY 1 - STUMPS', isLive: true,
-                        teamA: 'Essex', teamA_Score: '198/6', teamA_Overs: '(70.0 ov)',
-                        teamB: 'Leicestershire', teamB_Score: '-', teamB_Overs: '',
-                        statusText: 'Essex lead by 198 runs',
-                        probA: 68, probB: 32, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                    },
-                    {
-                        id: 'm6', sport: 'Cricket', matchup: 'Matchup',
-                        phase: 'SRI LANKA A NEED 182 RUNS', isLive: true,
-                        teamA: 'Afghanistan A', teamA_Score: '218/8', teamA_Overs: '(54.0 ov)',
-                        teamB: 'Sri Lanka A', teamB_Score: '37/0', teamB_Overs: '(8.3 ov)',
-                        statusText: 'Sri Lanka A need 182 runs',
-                        probA: 33, probB: 67, probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600', probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                    }
-                ];
-                setMatches(dummyMatches);
+                const res = await apiService.getLiveMatches();
+                const realData = res.data || [];
+                
+                if (realData.length > 0) {
+                    const mappedMatches = realData.map((m, idx) => {
+                        // Attempt to parse names like "Team A vs Team B"
+                        let tA = "Team A", tB = "Team B";
+                        if (m.name && m.name.includes(' vs ')) {
+                            const parts = m.name.split(' vs ');
+                            tA = parts[0];
+                            tB = parts[1].split(',')[0]; // remove "1st Test" etc
+                        } else if (m.name) {
+                            tA = m.name.substring(0, 10);
+                            tB = "Opponent";
+                        }
+                        
+                        // Default values
+                        let sA = '-', sB = '-', oA = '', oB = '';
+                        if (m.score && m.score.length > 0) {
+                            const scoreObj = m.score[0];
+                            
+                            // RapidAPI/Cricbuzz format
+                            if (scoreObj.team1Score && scoreObj.team1Score.inngs1) {
+                                const s1 = scoreObj.team1Score.inngs1;
+                                sA = `${s1.runs || 0}/${s1.wickets || 0}`;
+                                oA = `(${s1.overs || 0} ov)`;
+                            }
+                            if (scoreObj.team2Score && scoreObj.team2Score.inngs1) {
+                                const s2 = scoreObj.team2Score.inngs1;
+                                sB = `${s2.runs || 0}/${s2.wickets || 0}`;
+                                oB = `(${s2.overs || 0} ov)`;
+                            }
+                            
+                            // CricAPI format fallback
+                            if (scoreObj.r !== undefined) {
+                                sA = `${m.score[0].r}/${m.score[0].w || 0}`;
+                                oA = `(${m.score[0].o || 0} ov)`;
+                                if (m.score.length > 1) {
+                                    sB = `${m.score[1].r}/${m.score[1].w || 0}`;
+                                    oB = `(${m.score[1].o || 0} ov)`;
+                                }
+                            }
+                        }
+
+                        // Generate a pseudo-random win probability based on the match ID for demo purposes
+                        const hash = (m.id || m.matchId || idx).toString().split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+                        const probA = Math.abs(hash) % 80 + 10; 
+                        
+                        // Empty score if 0/0 and not started
+                        if (sA === '0/0' && sB === '0/0') {
+                            sA = '-'; sB = '-';
+                        }
+                        
+                        return {
+                            id: m.id || `real-${idx}`,
+                            sport: 'Cricket',
+                            matchup: m.name,
+                            phase: m.status || 'Upcoming',
+                            isLive: sA !== '-' || (m.status && m.status.toLowerCase().includes('live')),
+                            teamA: tA,
+                            teamA_Score: sA,
+                            teamA_Overs: oA !== '(0 ov)' ? oA : '',
+                            teamB: tB,
+                            teamB_Score: sB,
+                            teamB_Overs: oB !== '(0 ov)' ? oB : '',
+                            statusText: m.status || 'Live',
+                            date: m.date,
+                            probA: probA,
+                            probB: 100 - probA,
+                            probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600',
+                            probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
+                        };
+                    });
+                    
+                    // Backend already sorts them correctly, so no need to re-sort
+                    setMatches(mappedMatches);
+                } else {
+                    setMatches([]); // no live matches
+                }
             } catch (err) {
                 console.error("Failed to fetch matches", err);
             }
@@ -130,9 +158,19 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                             {/* Card Header */}
                             <div className="p-4 pb-2 border-b border-slate-100 dark:border-[#1e1e2a]/50 flex justify-between items-center">
                                 <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded flex items-center gap-1">
-                                        LIVE
-                                    </span>
+                                    {m.isLive && !m.statusText.toLowerCase().includes('upcoming') ? (
+                                        <span className="px-2 py-0.5 bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                                            LIVE
+                                        </span>
+                                    ) : m.statusText.toLowerCase().includes('upcoming') ? (
+                                        <span className="px-2 py-0.5 bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                                            UPCOMING
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 bg-rose-500 text-white text-[9px] font-black uppercase tracking-widest rounded flex items-center gap-1">
+                                            RESULT
+                                        </span>
+                                    )}
                                     <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate max-w-[150px]">
                                         {m.phase}
                                     </span>
@@ -337,22 +375,19 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                 <div className="bg-white dark:bg-[#13131a] rounded-[20px] border border-slate-200 dark:border-[#1e1e2a] p-5">
                     <h3 className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4">Upcoming Next</h3>
                     <div className="space-y-4">
-                        <div className="border-b border-slate-100 dark:border-[#1e1e2a] pb-3">
-                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Starts in 2h 15m</div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></span>
-                                <span className="text-sm font-bold text-slate-900 dark:text-white">India A <span className="text-slate-400 text-xs mx-0.5">vs</span> Australia A</span>
+                        {matches.filter(m => m.statusText && m.statusText.toLowerCase().includes('upcoming')).slice(0, 3).map((match, i, arr) => (
+                            <div key={match.id || i} className={i !== arr.length - 1 ? "border-b border-slate-100 dark:border-[#1e1e2a] pb-3" : ""}>
+                                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Upcoming Match</div>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></span>
+                                    <span className="text-sm font-bold text-slate-900 dark:text-white truncate">{match.teamA} <span className="text-slate-400 text-xs mx-0.5">vs</span> {match.teamB}</span>
+                                </div>
+                                <div className="text-[10px] font-medium text-slate-500 ml-5">{new Date(match.date || new Date()).toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })} • {new Date(match.date || new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                             </div>
-                            <div className="text-[10px] font-medium text-slate-500 ml-5">1:30 PM • Today</div>
-                        </div>
-                        <div>
-                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Starts in 4h 45m</div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700"></span>
-                                <span className="text-sm font-bold text-slate-900 dark:text-white">New Zealand A <span className="text-slate-400 text-xs mx-0.5">vs</span> England Lions</span>
-                            </div>
-                            <div className="text-[10px] font-medium text-slate-500 ml-5">4:00 PM • Today</div>
-                        </div>
+                        ))}
+                        {matches.filter(m => m.statusText && m.statusText.toLowerCase().includes('upcoming')).length === 0 && (
+                            <div className="text-sm text-slate-500 dark:text-slate-400">No upcoming matches right now.</div>
+                        )}
                     </div>
                     <button className="w-full mt-4 py-2 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors text-center">
                         View Full Calendar

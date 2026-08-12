@@ -122,3 +122,14 @@
 
 ---
 
+
+## [Commit: 9fdba93] - Tuesday, July 21, 2026 at 10:34 AM
+**Message:** Add _redirects for Netlify SPA routing
+**Time Tracked Since Last Save:** ~1 Days
+
+### High-Level Summary of Changes:
+- **Modified:** `CHANGELOG.md`
+- **Added:** `public/_redirects`
+
+---
+

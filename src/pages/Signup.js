@@ -4,14 +4,32 @@ import { Mail, Lock, User, ArrowRight, ArrowLeft, Trophy, Users } from 'lucide-r
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 
+const DEFAULT_LEAGUES = [
+    { leagueId: '2024', name: "ICC Women's T20 World Cup 2026", startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '10532', name: 'India tour of England 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '11876', name: 'England tour of Australia 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '7572', name: 'ICC Cricket World Cup League 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '11902', name: 'West Indies tour of India 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' }
+];
+
+const DEFAULT_TEAMS = [
+    { teamId: 'IND', name: 'India', leagueIds: ['2024', '10532', '11902'] },
+    { teamId: 'ENG', name: 'England', leagueIds: ['2024', '10532', '11876'] },
+    { teamId: 'AUS', name: 'Australia', leagueIds: ['2024', '11876'] },
+    { teamId: 'WI', name: 'West Indies', leagueIds: ['2024', '11902'] },
+    { teamId: 'NZ', name: 'New Zealand', leagueIds: ['2024'] },
+    { teamId: 'SA', name: 'South Africa', leagueIds: ['2024'] },
+    { teamId: 'PAK', name: 'Pakistan', leagueIds: ['2024'] }
+];
+
 const Signup = () => {
     const [formData, setFormData] = useState({
         name: '', email: '', password: '', confirmPassword: '',
-        role: 'player', sport: 'Cricket', leagueId: '', teamId: ''
+        role: 'player', sport: 'Cricket', leagueId: '2024', teamId: 'IND'
     });
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-    const [leagues, setLeagues] = useState([]);
-    const [teams, setTeams] = useState([]);
+    const [leagues, setLeagues] = useState(DEFAULT_LEAGUES);
+    const [teams, setTeams] = useState(DEFAULT_TEAMS);
     
     const navigate = useNavigate();
     const { signup } = useAuth();
@@ -21,22 +39,44 @@ const Signup = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const API_URL = process.env.REACT_APP_API_URL || '/api';
                 const [leaguesRes, teamsRes] = await Promise.all([
-                    fetch(`${process.env.REACT_APP_API_URL}/public/leagues`),
-                    fetch(`${process.env.REACT_APP_API_URL}/public/teams`)
+                    fetch(`${API_URL}/public/leagues`),
+                    fetch(`${API_URL}/public/teams`)
                 ]);
-                if (leaguesRes.ok && teamsRes.ok) {
-                    const fetchedLeagues = await leaguesRes.json();
-                    setLeagues(fetchedLeagues);
-                    setTeams(await teamsRes.json());
-                    
-                    if (fetchedLeagues.length > 0) {
-                        const activeLeague = fetchedLeagues.find(l => isLeagueActive(l)) || fetchedLeagues[0];
-                        setFormData(prev => ({ ...prev, leagueId: activeLeague.leagueId }));
-                    }
+                const isJson1 = leaguesRes.ok && leaguesRes.headers.get('content-type')?.includes('application/json');
+                const isJson2 = teamsRes.ok && teamsRes.headers.get('content-type')?.includes('application/json');
+
+                let fetchedLeagues = [];
+                let fetchedTeams = [];
+
+                if (isJson1 && isJson2) {
+                    fetchedLeagues = await leaguesRes.json();
+                    fetchedTeams = await teamsRes.json();
+                }
+
+                const finalLeagues = (fetchedLeagues && fetchedLeagues.length > 0) ? fetchedLeagues : DEFAULT_LEAGUES;
+                const finalTeams = (fetchedTeams && fetchedTeams.length > 0) ? fetchedTeams : DEFAULT_TEAMS;
+
+                setLeagues(finalLeagues);
+                setTeams(finalTeams);
+                
+                const activeLeague = finalLeagues.find(l => isLeagueActive(l)) || finalLeagues[0];
+                if (activeLeague) {
+                    const selectedLeagueId = String(activeLeague.leagueId);
+                    const matchingTeams = finalTeams.filter(t => t.leagueIds && t.leagueIds.some(id => String(id) === selectedLeagueId));
+                    const initialTeamId = matchingTeams.length > 0 ? String(matchingTeams[0].teamId) : String(finalTeams[0]?.teamId || '');
+
+                    setFormData(prev => ({
+                        ...prev,
+                        leagueId: prev.leagueId && finalLeagues.some(l => String(l.leagueId) === String(prev.leagueId)) ? String(prev.leagueId) : selectedLeagueId,
+                        teamId: prev.teamId && finalTeams.some(t => String(t.teamId) === String(prev.teamId)) ? String(prev.teamId) : initialTeamId
+                    }));
                 }
             } catch (err) {
-                console.error("Failed to load initial data", err);
+                console.warn("Backend API unavailable for initial data load:", err.message);
+                setLeagues(DEFAULT_LEAGUES);
+                setTeams(DEFAULT_TEAMS);
             }
         };
         fetchData();
@@ -49,9 +89,11 @@ const Signup = () => {
         if (!league.startDate || !league.endDate) return true;
         
         const now = new Date();
-        const start = new Date(league.startDate);
-        const end = new Date(league.endDate);
+        const start = new Date(parseInt(league.startDate) || league.startDate);
+        const end = new Date(parseInt(league.endDate) || league.endDate);
         
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return true;
+
         const accessStart = new Date(start.getTime() - 21 * 24 * 60 * 60 * 1000);
         const accessEnd = new Date(end.getTime() + 21 * 24 * 60 * 60 * 1000);
         
@@ -70,8 +112,8 @@ const Signup = () => {
             return;
         }
 
-        const selectedLeague = leagues.find(l => l.leagueId === formData.leagueId);
-        const selectedTeam = teams.find(t => t.teamId === formData.teamId);
+        const selectedLeague = leagues.find(l => String(l.leagueId) === String(formData.leagueId));
+        const selectedTeam = teams.find(t => String(t.teamId) === String(formData.teamId));
 
         if (selectedLeague && !isLeagueActive(selectedLeague)) {
             setError("Access Denied: League is currently inactive. Access is only available ±21 days around the tournament.");
@@ -98,7 +140,11 @@ const Signup = () => {
         }
     };
 
-    const filteredTeams = teams.filter(t => t.leagueIds && t.leagueIds.includes(formData.leagueId));
+    const activeTeams = teams.length > 0 ? teams : DEFAULT_TEAMS;
+    let filteredTeams = activeTeams.filter(t => t.leagueIds && t.leagueIds.some(id => String(id) === String(formData.leagueId)));
+    if (filteredTeams.length === 0) {
+        filteredTeams = activeTeams;
+    }
 
     const inputClass = "w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm";
     const selectClass = "w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm appearance-none";
@@ -205,9 +251,9 @@ const Signup = () => {
                                     className={selectClass}
                                     required
                                 >
-                                    <option value="" disabled>-- Select Competition --</option>
+                                    <option value="" disabled className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">-- Select Competition --</option>
                                     {leagues.map(l => (
-                                        <option key={l.leagueId} value={l.leagueId}>
+                                        <option key={l.leagueId} value={l.leagueId} className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">
                                             {l.name} {isLeagueActive(l) ? '' : '(Inactive)'}
                                         </option>
                                     ))}
@@ -227,19 +273,19 @@ const Signup = () => {
                                     className={selectClass}
                                     required
                                 >
-                                    <option value="" disabled>-- Select Your Team --</option>
+                                    <option value="" disabled className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">-- Select Your Team --</option>
                                     {formData.sport === 'Football' && (<>
-                                        <option value="LIGASPORT">LIGASPORT</option>
-                                        <option value="TECHRUN">TECHRUN</option>
-                                        <option value="DATA FC">DATA FC</option>
-                                        <option value="REAL MADRID">REAL MADRID</option>
-                                        <option value="MAN CITY">MAN CITY</option>
-                                        <option value="BAYERN MUNICH">BAYERN MUNICH</option>
-                                        <option value="PSG">PSG</option>
+                                        <option value="LIGASPORT" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">LIGASPORT</option>
+                                        <option value="TECHRUN" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">TECHRUN</option>
+                                        <option value="DATA FC" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">DATA FC</option>
+                                        <option value="REAL MADRID" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">REAL MADRID</option>
+                                        <option value="MAN CITY" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">MAN CITY</option>
+                                        <option value="BAYERN MUNICH" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">BAYERN MUNICH</option>
+                                        <option value="PSG" className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">PSG</option>
                                     </>)}
                                     {formData.sport === 'Cricket' && (<>
                                         {filteredTeams.map(t => (
-                                            <option key={t.teamId} value={t.teamId}>{t.name}</option>
+                                            <option key={t.teamId} value={t.teamId} className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">{t.name}</option>
                                         ))}
                                     </>)}
                                     {formData.sport === 'Track & Field' && (<>

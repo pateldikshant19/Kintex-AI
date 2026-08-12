@@ -5,8 +5,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    // Use environment variable or default to localhost:3001
-    const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+    const API_URL = process.env.REACT_APP_API_URL || '/api';
 
     useEffect(() => {
         // Check for active session token
@@ -22,18 +21,31 @@ export const AuthProvider = ({ children }) => {
         checkAuth();
     }, []);
 
+    const fetchJson = async (url, options) => {
+        let response;
+        try {
+            response = await fetch(url, options);
+        } catch (err) {
+            throw new Error("Cannot connect to server. Please check if the backend server on port 3001 is running.");
+        }
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Request failed');
+            return data;
+        } else {
+            throw new Error(`Server returned unexpected response (${response.status}). Please check backend status.`);
+        }
+    };
+
     const signup = async (userData) => {
         try {
-            const response = await fetch(`${API_URL}/auth/signup`, {
+            const data = await fetchJson(`${API_URL}/auth/signup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(userData)
             });
-            const data = await response.json();
 
-            if (!response.ok) throw new Error(data.error || 'Signup failed');
-
-            // Auto login logic equivalent using the returned token/user
             localStorage.setItem('token', data.token);
             localStorage.setItem('activeUser', JSON.stringify(data.user));
             setUser(data.user);
@@ -46,14 +58,11 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            const response = await fetch(`${API_URL}/auth/login`, {
+            const data = await fetchJson(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-            const data = await response.json();
-
-            if (!response.ok) throw new Error(data.error || 'Invalid credentials');
 
             localStorage.setItem('token', data.token);
             localStorage.setItem('activeUser', JSON.stringify(data.user));

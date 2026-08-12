@@ -4,11 +4,29 @@ import { Mail, Lock, ArrowRight, ArrowLeft, Trophy, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useSession } from '../context/SessionContext';
 
+const DEFAULT_LEAGUES = [
+    { leagueId: '2024', name: "ICC Women's T20 World Cup 2026", startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '10532', name: 'India tour of England 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '11876', name: 'England tour of Australia 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '7572', name: 'ICC Cricket World Cup League 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' },
+    { leagueId: '11902', name: 'West Indies tour of India 2026', startDate: Date.now(), endDate: Date.now() + 30*86400000, seriesType: 'International' }
+];
+
+const DEFAULT_TEAMS = [
+    { teamId: 'IND', name: 'India', leagueIds: ['2024', '10532', '11902'] },
+    { teamId: 'ENG', name: 'England', leagueIds: ['2024', '10532', '11876'] },
+    { teamId: 'AUS', name: 'Australia', leagueIds: ['2024', '11876'] },
+    { teamId: 'WI', name: 'West Indies', leagueIds: ['2024', '11902'] },
+    { teamId: 'NZ', name: 'New Zealand', leagueIds: ['2024'] },
+    { teamId: 'SA', name: 'South Africa', leagueIds: ['2024'] },
+    { teamId: 'PAK', name: 'Pakistan', leagueIds: ['2024'] }
+];
+
 const Login = () => {
-    const [formData, setFormData] = useState({ email: '', password: '', leagueId: '', teamId: '' });
+    const [formData, setFormData] = useState({ email: '', password: '', leagueId: '2024', teamId: 'IND' });
     const [isPasswordFocused, setIsPasswordFocused] = useState(false);
-    const [leagues, setLeagues] = useState([]);
-    const [teams, setTeams] = useState([]);
+    const [leagues, setLeagues] = useState(DEFAULT_LEAGUES);
+    const [teams, setTeams] = useState(DEFAULT_TEAMS);
     
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -18,23 +36,44 @@ const Login = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const API_URL = process.env.REACT_APP_API_URL || '/api';
                 const [leaguesRes, teamsRes] = await Promise.all([
-                    fetch(`${process.env.REACT_APP_API_URL}/public/leagues`),
-                    fetch(`${process.env.REACT_APP_API_URL}/public/teams`)
+                    fetch(`${API_URL}/public/leagues`),
+                    fetch(`${API_URL}/public/teams`)
                 ]);
-                if (leaguesRes.ok && teamsRes.ok) {
-                    const fetchedLeagues = await leaguesRes.json();
-                    setLeagues(fetchedLeagues);
-                    setTeams(await teamsRes.json());
+                const isJson1 = leaguesRes.ok && leaguesRes.headers.get('content-type')?.includes('application/json');
+                const isJson2 = teamsRes.ok && teamsRes.headers.get('content-type')?.includes('application/json');
+
+                let fetchedLeagues = [];
+                let fetchedTeams = [];
+
+                if (isJson1 && isJson2) {
+                    fetchedLeagues = await leaguesRes.json();
+                    fetchedTeams = await teamsRes.json();
+                }
+
+                const finalLeagues = (fetchedLeagues && fetchedLeagues.length > 0) ? fetchedLeagues : DEFAULT_LEAGUES;
+                const finalTeams = (fetchedTeams && fetchedTeams.length > 0) ? fetchedTeams : DEFAULT_TEAMS;
+
+                setLeagues(finalLeagues);
+                setTeams(finalTeams);
+
+                const activeLeague = finalLeagues.find(l => isLeagueActive(l)) || finalLeagues[0];
+                if (activeLeague) {
+                    const selectedLeagueId = String(activeLeague.leagueId);
+                    const matchingTeams = finalTeams.filter(t => t.leagueIds && t.leagueIds.some(id => String(id) === selectedLeagueId));
+                    const initialTeamId = matchingTeams.length > 0 ? String(matchingTeams[0].teamId) : String(finalTeams[0]?.teamId || '');
                     
-                    // Pre-select an active league if possible
-                    if (fetchedLeagues.length > 0) {
-                        const activeLeague = fetchedLeagues.find(l => isLeagueActive(l)) || fetchedLeagues[0];
-                        setFormData(prev => ({ ...prev, leagueId: activeLeague.leagueId }));
-                    }
+                    setFormData(prev => ({
+                        ...prev,
+                        leagueId: prev.leagueId && finalLeagues.some(l => String(l.leagueId) === String(prev.leagueId)) ? String(prev.leagueId) : selectedLeagueId,
+                        teamId: prev.teamId && finalTeams.some(t => String(t.teamId) === String(prev.teamId)) ? String(prev.teamId) : initialTeamId
+                    }));
                 }
             } catch (err) {
-                console.error("Failed to load initial data", err);
+                console.warn("Backend API unavailable for initial data load:", err.message);
+                setLeagues(DEFAULT_LEAGUES);
+                setTeams(DEFAULT_TEAMS);
             }
         };
         fetchData();
@@ -47,8 +86,8 @@ const Login = () => {
         const start = new Date(parseInt(league.startDate) || league.startDate);
         const end = new Date(parseInt(league.endDate) || league.endDate);
         
-        if (now > end) return 'Complete';
-        if (now >= start && now <= end) return 'Live / Active';
+        if (!isNaN(end.getTime()) && now > end) return 'Complete';
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && now >= start && now <= end) return 'Live / Active';
         return 'Upcoming';
     };
 
@@ -65,7 +104,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const selectedLeague = leagues.find(l => l.leagueId === formData.leagueId);
+            const selectedLeague = leagues.find(l => String(l.leagueId) === String(formData.leagueId));
             
             if (selectedLeague && !isLeagueActive(selectedLeague)) {
                 setError("Access Denied: Selected league is currently inactive. Access is only available ±21 days around the tournament.");
@@ -88,22 +127,25 @@ const Login = () => {
     };
 
     // Filter out leagues that ended in 2025 or earlier
-    const validLeagues = leagues.filter(l => {
+    const activeLeagues = leagues.length > 0 ? leagues : DEFAULT_LEAGUES;
+    const validLeagues = activeLeagues.filter(l => {
         if (!l.endDate) return true;
         const end = new Date(parseInt(l.endDate) || l.endDate);
-        return end.getFullYear() >= 2026;
+        return isNaN(end.getTime()) || end.getFullYear() >= 2026;
     });
+
+    const displayLeagues = validLeagues.length > 0 ? validLeagues : activeLeagues;
 
     // Smart team filtering: if exact league mapping is missing, guess based on league name
     // If we STILL can't find any teams, we fallback to returning ALL teams so the user is never blocked.
-    let filteredTeams = teams.filter(t => {
-        if (t.leagueIds && t.leagueIds.includes(formData.leagueId)) return true;
+    const activeTeams = teams.length > 0 ? teams : DEFAULT_TEAMS;
+    let filteredTeams = activeTeams.filter(t => {
+        if (t.leagueIds && t.leagueIds.some(id => String(id) === String(formData.leagueId))) return true;
         
-        const selectedLeague = leagues.find(l => l.leagueId === formData.leagueId);
+        const selectedLeague = displayLeagues.find(l => String(l.leagueId) === String(formData.leagueId));
         if (selectedLeague && selectedLeague.name) {
             const leagueName = selectedLeague.name.toLowerCase();
             const teamName = t.name.toLowerCase();
-            // Split team name by space to match partials (e.g. "India Women" matches "India")
             const parts = teamName.split(' ');
             return parts.some(part => part.length > 2 && leagueName.includes(part));
         }
@@ -112,7 +154,7 @@ const Login = () => {
     
     // Fallback: If strict matching yields 0 teams, show all teams to prevent blocking login
     if (filteredTeams.length === 0) {
-        filteredTeams = teams;
+        filteredTeams = activeTeams;
     }
 
     const inputClass = "w-full pl-10 pr-4 py-3 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all text-sm";
@@ -187,9 +229,9 @@ const Login = () => {
                                     className={selectClass}
                                     required
                                 >
-                                    <option value="" disabled>-- Select Competition --</option>
-                                    {validLeagues.map(l => (
-                                        <option key={l.leagueId} value={l.leagueId}>
+                                    <option value="" disabled className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">-- Select Competition --</option>
+                                    {displayLeagues.map(l => (
+                                        <option key={l.leagueId} value={l.leagueId} className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">
                                             {l.name} ({getLeagueStatus(l)})
                                         </option>
                                     ))}
@@ -209,9 +251,9 @@ const Login = () => {
                                     className={selectClass}
                                     required
                                 >
-                                    <option value="" disabled>-- Select Team --</option>
+                                    <option value="" disabled className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">-- Select Team --</option>
                                     {filteredTeams.map(t => (
-                                        <option key={t.teamId} value={t.teamId}>{t.name}</option>
+                                        <option key={t.teamId} value={t.teamId} className="bg-white dark:bg-[#13131a] text-slate-900 dark:text-slate-100">{t.name}</option>
                                     ))}
                                 </select>
                             </div>

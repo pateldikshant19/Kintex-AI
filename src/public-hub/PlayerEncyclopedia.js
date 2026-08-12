@@ -10,10 +10,11 @@ const PlayerEncyclopedia = () => {
     useEffect(() => {
         const fetchPlayers = async () => {
             try {
+                const API_URL = process.env.REACT_APP_API_URL || '/api';
                 // If search term is empty, fetch default famous players list
                 const endpoint = searchTerm.trim().length > 0 
-                    ? `http://localhost:3001/api/public/players/search?q=${searchTerm}`
-                    : 'http://localhost:3001/api/public/players';
+                    ? `${API_URL}/public/players/search?q=${searchTerm}`
+                    : `${API_URL}/public/players`;
                     
                 const res = await fetch(endpoint);
                 const data = await res.json();

@@ -61,14 +61,14 @@ const CricketLab = () => {
     const heatmapCanvasRef = useRef(null);
     const socketRef = useRef(null);
     
-    const API_URL = `${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/cricket`;
+    const API_URL = `${process.env.REACT_APP_API_URL || '/api'}/cricket`;
 
     // -------------------------------------------------------------
     // REAL-TIME SOCKET.IO INTEGRATION
     // -------------------------------------------------------------
     useEffect(() => {
         // Connect to express socket backend
-        socketRef.current = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001');
+        socketRef.current = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
 
         socketRef.current.on('connect', () => {
             setSocketConnected(true);

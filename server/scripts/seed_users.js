@@ -11,7 +11,7 @@ async function seedUsers() {
         console.log('Connected to MongoDB');
 
         // deletes existing test users if they exist to avoid unique constraint error
-        await User.deleteMany({ email: { $in: ['manager@test.com', 'analyst@test.com'] } });
+        await User.deleteMany({ email: { $in: ['manager@test.com', 'analyst@test.com', 'admin@test.com'] } });
         console.log('Cleaned up old test users.');
 
         const users = [
@@ -31,6 +31,15 @@ async function seedUsers() {
                 role: 'analyst',
                 teamName: 'India',
                 sport: 'Cricket',
+                isActive: true
+            },
+            {
+                name: 'System Admin',
+                email: 'admin@test.com',
+                password: 'password123',
+                role: 'admin',
+                teamName: 'System',
+                sport: 'All',
                 isActive: true
             }
         ];

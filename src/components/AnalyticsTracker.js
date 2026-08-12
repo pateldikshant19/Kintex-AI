@@ -9,7 +9,7 @@ const AnalyticsTracker = () => {
             try {
                 const token = localStorage.getItem('token');
 
-                const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+                const API_URL = process.env.REACT_APP_API_URL || '/api';
                 await fetch(`${API_URL}/admin/track`, {
                     method: 'POST',
                     headers: {
@@ -21,10 +21,11 @@ const AnalyticsTracker = () => {
                         referrer: document.referrer,
                         userAgent: navigator.userAgent
                     })
+                }).catch(() => {
+                    // Silently fail if server is offline
                 });
             } catch (err) {
                 // Silently fail to not interrupt user experience
-                console.error('Analytics error:', err);
             }
         };
 

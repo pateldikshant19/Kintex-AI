@@ -6,11 +6,32 @@ import PlayerEncyclopedia from './PlayerEncyclopedia';
 import PredictThePlay from './PredictThePlay';
 import { Target, Users, BookMarked, Radio, Menu, X, ArrowLeft, LayoutDashboard, Calendar, FileText, Search, Bell, Settings } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
-
+import GlobalSearch from '../components/GlobalSearch';
+import NotificationDropdown from '../components/NotificationDropdown';
+import ProfileDropdown from '../components/ProfileDropdown';
+import PublicSettingsModal from '../components/PublicSettingsModal';
 const PublicHubApp = () => {
     const [activeSection, setActiveSection] = useState('pulse');
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    // Global search shortcut
+    React.useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsSearchOpen(true);
+            }
+            if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                setIsSearchOpen(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     const navigateTo = (section, matchId = null) => {
         setActiveSection(section);
@@ -57,7 +78,10 @@ const PublicHubApp = () => {
                 </div>
 
                 <div className="flex flex-col gap-6 w-full items-center mb-4">
-                    <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                    <button 
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                    >
                         <Settings size={20} />
                     </button>
                 </div>
@@ -98,18 +122,21 @@ const PublicHubApp = () => {
                             </div>
                         </div>
 
-                        {/* Right Area */}
                         <div className="flex items-center gap-5">
                             <ThemeToggle />
-                            <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                            <button 
+                                onClick={() => setIsSearchOpen(true)}
+                                className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                            >
                                 <Search size={20} />
                             </button>
-                            <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative">
-                                <Bell size={20} />
-                                <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-[#0a0a0c]"></span>
-                            </button>
-                            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-xs text-slate-700 dark:text-slate-300 ml-2">
-                                DK
+                            <NotificationDropdown />
+                            <div className="ml-2">
+                                <ProfileDropdown 
+                                    user={{ name: 'Public User', email: 'guest@kinetix.ai', role: 'guest' }}
+                                    logout={() => {}}
+                                    onOpenSettings={() => setIsSettingsOpen(true)}
+                                />
                             </div>
                             <button
                                 className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#13131a] transition-all"
@@ -167,6 +194,9 @@ const PublicHubApp = () => {
                     </div>
                 </main>
             </div>
+            
+            <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+            <PublicSettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
         </div>
     );
 };
