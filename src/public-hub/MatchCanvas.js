@@ -23,10 +23,11 @@ const MatchCanvas = ({ matchId, sport = 'Cricket' }) => {
             teamA: { name: 'INDORE EAGLES', color: '#1B4D3E' },
             teamB: { name: 'MUMBAI TITANS', color: '#004BA0' },
             events: [
-                { time: 10, type: 'Boundary', value: 4, detail: 'Pull shot through mid-wicket' },
-                { time: 45, type: 'Wicket', value: 1, detail: 'Bowled out by express pace' },
-                { time: 92, type: 'Boundary', value: 6, detail: 'Straight drive over the bowler' },
-                { time: 156, type: 'Goal', value: 1, detail: 'Stunning header in top-left corner' },
+                { time: 10, type: 'Boundary', value: 4, detail: 'Pull shot through mid-wicket', posX: 35, posY: 65 },
+                { time: 45, type: 'Wicket', value: 1, detail: 'Bowled out by express pace', posX: 50, posY: 50 },
+                { time: 92, type: 'Boundary', value: 6, detail: 'Straight drive over the bowler', posX: 50, posY: 20 },
+                { time: 156, type: 'Boundary', value: 4, detail: 'Cover drive past extra cover', posX: 75, posY: 40 },
+                { time: 210, type: 'Wicket', value: 1, detail: 'Caught at deep mid-wicket', posX: 30, posY: 75 },
             ]
         });
     }, [matchId, sport]);
@@ -58,7 +59,7 @@ const MatchCanvas = ({ matchId, sport = 'Cricket' }) => {
                         <ChevronLeft className="text-slate-500 group-hover:text-white transition-colors" />
                     </div>
                     <div>
-                        <h2 className="text-2xl font-black italic tracking-tighter uppercase text-slate-900 dark:text-white tracking-widest leading-none mb-2">MATCH CANVAS REPLAY</h2>
+                        <h2 className="text-4xl font-black italic tracking-tighter uppercase text-slate-900 dark:text-white tracking-widest leading-none mb-2">MATCH CANVAS REPLAY</h2>
                         <div className="flex items-center gap-2">
                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-white animate-pulse"></div>
                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{sport} SESSION • {currentTime} / {totalDuration} PHASES COMPLETE</span>
@@ -169,8 +170,9 @@ const MatchCanvas = ({ matchId, sport = 'Cricket' }) => {
                         {activeEvents.map((e, idx) => (
                            <div 
                                 key={idx}
-                                className="absolute w-3 h-3 rounded-full bg-slate-900 dark:bg-white animate-pulse"
-                                style={{ top: `${20 + Math.random() * 60}%`, left: `${20 + Math.random() * 60}%` }}
+                                className="absolute w-3.5 h-3.5 rounded-full bg-emerald-400 dark:bg-emerald-500 animate-pulse border-2 border-white"
+                                style={{ top: `${e.posY}%`, left: `${e.posX}%` }}
+                                title={e.detail}
                            ></div>
                         ))}
                         <div className="relative text-center p-8 z-10">

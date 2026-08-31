@@ -4,13 +4,18 @@ import LiveMatchPulseCenter from './LiveMatchPulseCenter';
 import MatchCanvas from './MatchCanvas';
 import PlayerEncyclopedia from './PlayerEncyclopedia';
 import PredictThePlay from './PredictThePlay';
+import PublicDashboardView from './PublicDashboardView';
+import PublicCalendarView from './PublicCalendarView';
 import { Target, Users, BookMarked, Radio, Menu, X, ArrowLeft, LayoutDashboard, Calendar, FileText, Search, Bell, Settings } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import GlobalSearch from '../components/GlobalSearch';
 import NotificationDropdown from '../components/NotificationDropdown';
 import ProfileDropdown from '../components/ProfileDropdown';
 import PublicSettingsModal from '../components/PublicSettingsModal';
+import { useAuth } from '../context/AuthContext';
+
 const PublicHubApp = () => {
+    const { user, logout } = useAuth();
     const [activeSection, setActiveSection] = useState('pulse');
     const [selectedMatchId, setSelectedMatchId] = useState(null);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,6 +53,8 @@ const PublicHubApp = () => {
         { id: 'calendar', label: 'Calendar', icon: <Calendar size={20} /> },
         { id: 'simulator', label: 'Reports', icon: <FileText size={20} /> }
     ];
+
+    const currentUser = user || { name: 'Public User', email: 'guest@kinetix.ai', role: 'guest' };
 
     return (
         <div className="min-h-screen bg-[#f4f4f6] dark:bg-[#0a0a0c] text-slate-900 dark:text-white transition-colors duration-300 flex font-sans">
@@ -133,8 +140,8 @@ const PublicHubApp = () => {
                             <NotificationDropdown />
                             <div className="ml-2">
                                 <ProfileDropdown 
-                                    user={{ name: 'Public User', email: 'guest@kinetix.ai', role: 'guest' }}
-                                    logout={() => {}}
+                                    user={currentUser}
+                                    logout={logout || (() => {})}
                                     onOpenSettings={() => setIsSettingsOpen(true)}
                                 />
                             </div>
@@ -183,14 +190,12 @@ const PublicHubApp = () => {
                     )}
 
                     <div>
+                        {activeSection === 'dashboard' && <PublicDashboardView onNavigate={(sec, id) => navigateTo(sec, id)} />}
                         {activeSection === 'pulse' && <LiveMatchPulseCenter onSelectMatch={(id) => navigateTo('canvas', id)} />}
-                        {activeSection === 'canvas' && <MatchCanvas matchId={selectedMatchId || 'm1'} />}
+                        {activeSection === 'canvas' && <MatchCanvas matchId={selectedMatchId || 'c1'} />}
                         {activeSection === 'player' && <PlayerEncyclopedia />}
+                        {activeSection === 'calendar' && <PublicCalendarView />}
                         {activeSection === 'simulator' && <PredictThePlay />}
-                        
-                        {/* Placeholders for new sections */}
-                        {activeSection === 'dashboard' && <div className="text-center p-20 text-slate-400">Dashboard View (Coming Soon)</div>}
-                        {activeSection === 'calendar' && <div className="text-center p-20 text-slate-400">Calendar View (Coming Soon)</div>}
                     </div>
                 </main>
             </div>

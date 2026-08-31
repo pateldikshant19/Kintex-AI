@@ -1,99 +1,86 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, Star, Grid, List, ChevronDown, ChevronRight, Activity, Users } from 'lucide-react';
+import { io } from 'socket.io-client';
 import apiService from '../utils/apiService';
 
 const LiveMatchPulseCenter = ({ onSelectMatch }) => {
     const [matches, setMatches] = useState([]);
     const [activeFilter, setActiveFilter] = useState('All Matches');
 
+    const processRawMatches = (realData) => {
+        if (!realData || realData.length === 0) return [];
+        return realData.map((m, idx) => {
+            let tA = m.teamA || "Team A", tB = m.teamB || "Team B";
+            if (m.name && m.name.includes(' vs ')) {
+                const parts = m.name.split(' vs ');
+                tA = parts[0].trim();
+                tB = parts[1].split(',')[0].trim();
+            }
+
+            let sA = m.teamA_Score || '-', sB = m.teamB_Score || '-', oA = m.teamA_Overs || '', oB = m.teamB_Overs || '';
+
+            if (sA === '-' && m.score && m.score.length > 0) {
+                const s1 = m.score[0];
+                sA = `${s1.r || s1.runs || 0}/${s1.w !== undefined ? s1.w : (s1.wickets || 0)}`;
+                oA = (s1.o || s1.overs) ? `(${s1.o || s1.overs} ov)` : '';
+                if (m.score.length > 1) {
+                    const s2 = m.score[1];
+                    sB = `${s2.r || s2.runs || 0}/${s2.w !== undefined ? s2.w : (s2.wickets || 0)}`;
+                    oB = (s2.o || s2.overs) ? `(${s2.o || s2.overs} ov)` : '';
+                }
+            }
+
+            const probA = m.probA !== undefined ? m.probA : (m.winProbability?.teamA || 50);
+            const probB = m.probB !== undefined ? m.probB : (m.winProbability?.teamB || 50);
+
+            return {
+                id: m.id || m.matchId || `real-${idx}`,
+                sport: m.sport || 'Cricket',
+                matchup: m.name || `${tA} vs ${tB}`,
+                phase: m.statusText || m.status || 'Upcoming',
+                isLive: m.isLive !== undefined ? m.isLive : (sA !== '-' && !m.status?.toLowerCase().includes('upcoming')),
+                teamA: tA,
+                teamA_Score: sA,
+                teamA_Overs: oA,
+                teamB: tB,
+                teamB_Score: sB,
+                teamB_Overs: oB,
+                statusText: m.statusText || m.status || 'Live',
+                date: m.date,
+                probA: probA,
+                probB: probB,
+                probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600',
+                probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
+            };
+        });
+    };
+
     useEffect(() => {
         const fetchMatches = async () => {
             try {
                 const res = await apiService.getLiveMatches();
-                const realData = res.data || [];
-                
-                if (realData.length > 0) {
-                    const mappedMatches = realData.map((m, idx) => {
-                        // Attempt to parse names like "Team A vs Team B"
-                        let tA = "Team A", tB = "Team B";
-                        if (m.name && m.name.includes(' vs ')) {
-                            const parts = m.name.split(' vs ');
-                            tA = parts[0];
-                            tB = parts[1].split(',')[0]; // remove "1st Test" etc
-                        } else if (m.name) {
-                            tA = m.name.substring(0, 10);
-                            tB = "Opponent";
-                        }
-                        
-                        // Default values
-                        let sA = '-', sB = '-', oA = '', oB = '';
-                        if (m.score && m.score.length > 0) {
-                            const scoreObj = m.score[0];
-                            
-                            // RapidAPI/Cricbuzz format
-                            if (scoreObj.team1Score && scoreObj.team1Score.inngs1) {
-                                const s1 = scoreObj.team1Score.inngs1;
-                                sA = `${s1.runs || 0}/${s1.wickets || 0}`;
-                                oA = `(${s1.overs || 0} ov)`;
-                            }
-                            if (scoreObj.team2Score && scoreObj.team2Score.inngs1) {
-                                const s2 = scoreObj.team2Score.inngs1;
-                                sB = `${s2.runs || 0}/${s2.wickets || 0}`;
-                                oB = `(${s2.overs || 0} ov)`;
-                            }
-                            
-                            // CricAPI format fallback
-                            if (scoreObj.r !== undefined) {
-                                sA = `${m.score[0].r}/${m.score[0].w || 0}`;
-                                oA = `(${m.score[0].o || 0} ov)`;
-                                if (m.score.length > 1) {
-                                    sB = `${m.score[1].r}/${m.score[1].w || 0}`;
-                                    oB = `(${m.score[1].o || 0} ov)`;
-                                }
-                            }
-                        }
-
-                        // Generate a pseudo-random win probability based on the match ID for demo purposes
-                        const hash = (m.id || m.matchId || idx).toString().split('').reduce((a,b)=>{a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
-                        const probA = Math.abs(hash) % 80 + 10; 
-                        
-                        // Empty score if 0/0 and not started
-                        if (sA === '0/0' && sB === '0/0') {
-                            sA = '-'; sB = '-';
-                        }
-                        
-                        return {
-                            id: m.id || `real-${idx}`,
-                            sport: 'Cricket',
-                            matchup: m.name,
-                            phase: m.status || 'Upcoming',
-                            isLive: sA !== '-' || (m.status && m.status.toLowerCase().includes('live')),
-                            teamA: tA,
-                            teamA_Score: sA,
-                            teamA_Overs: oA !== '(0 ov)' ? oA : '',
-                            teamB: tB,
-                            teamB_Score: sB,
-                            teamB_Overs: oB !== '(0 ov)' ? oB : '',
-                            statusText: m.status || 'Live',
-                            date: m.date,
-                            probA: probA,
-                            probB: 100 - probA,
-                            probA_color: 'bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600',
-                            probB_color: 'bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600'
-                        };
-                    });
-                    
-                    // Backend already sorts them correctly, so no need to re-sort
-                    setMatches(mappedMatches);
-                } else {
-                    setMatches([]); // no live matches
-                }
+                const processed = processRawMatches(res.data || []);
+                setMatches(processed);
             } catch (err) {
                 console.error("Failed to fetch matches", err);
             }
         };
 
         fetchMatches();
+
+        // Connect Socket.IO for real-time live score updates
+        const socketUrl = process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001';
+        const socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+
+        socket.on('liveMatchesUpdate', (data) => {
+            if (data && data.length > 0) {
+                setMatches(processRawMatches(data));
+            }
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, []);
 
     const filters = ['All Matches', 'International', 'Leagues', 'Domestic', 'A-Team'];
@@ -244,34 +231,40 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                 {/* BOTTOM PANELS */}
                 <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
                     {/* Today's Spotlight */}
-                    <div className="bg-white dark:bg-[#13131a] rounded-[20px] border border-slate-200 dark:border-[#1e1e2a] p-5">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Today's Spotlight</h3>
-                        <div className="flex items-center justify-between">
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                                    <span className="text-sm font-bold text-slate-900 dark:text-white">Afghanistan A <span className="text-slate-400 font-normal">vs</span> Sri Lanka A</span>
-                                    <span className="px-1.5 py-0.5 bg-rose-500 text-white text-[8px] font-black uppercase tracking-widest rounded">LIVE</span>
+                    {(() => {
+                        const spotlight = matches.find(m => m.isLive) || matches[0];
+                        if (!spotlight) return null;
+                        return (
+                            <div className="bg-white dark:bg-[#13131a] rounded-[20px] border border-slate-200 dark:border-[#1e1e2a] p-5">
+                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Today's Spotlight</h3>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">{spotlight.teamA} <span className="text-slate-400 font-normal">vs</span> {spotlight.teamB}</span>
+                                            <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest rounded">LIVE SPOTLIGHT</span>
+                                        </div>
+                                        <div className="flex flex-col text-[11px] text-slate-500 ml-8">
+                                            <div className="flex justify-between w-36"><span className="font-bold text-slate-700 dark:text-slate-300">{spotlight.teamA}</span> <span>{spotlight.teamA_Score} <span className="text-[9px]">{spotlight.teamA_Overs}</span></span></div>
+                                            <div className="flex justify-between w-36"><span className="font-bold text-slate-700 dark:text-slate-300">{spotlight.teamB}</span> <span>{spotlight.teamB_Score} <span className="text-[9px]">{spotlight.teamB_Overs}</span></span></div>
+                                        </div>
+                                        <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-500 mt-1 ml-8">{spotlight.statusText}</div>
+                                    </div>
+                                    <div className="w-32 flex flex-col items-center">
+                                        <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Win Probability</div>
+                                        <div className="w-full flex items-center justify-between text-[11px] font-bold mb-1">
+                                            <span className="text-slate-900 dark:text-white">{spotlight.probA}%</span>
+                                            <span className="text-blue-500">{spotlight.probB}%</span>
+                                        </div>
+                                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex">
+                                            <div className="h-full bg-emerald-500" style={{ width: `${spotlight.probA}%` }}></div>
+                                            <div className="h-full bg-blue-500" style={{ width: `${spotlight.probB}%` }}></div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col text-[11px] text-slate-500 ml-8">
-                                    <div className="flex justify-between w-32"><span className="font-bold text-slate-700 dark:text-slate-300">AFD-A</span> <span>218/8 <span className="text-[9px]">(54.0 ov)</span></span></div>
-                                    <div className="flex justify-between w-32"><span className="font-bold text-slate-700 dark:text-slate-300">SL-A</span> <span>37/0 <span className="text-[9px]">(8.3 ov)</span></span></div>
-                                </div>
-                                <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-500 mt-1 ml-8">Sri Lanka A need 182 runs</div>
                             </div>
-                            <div className="w-32 flex flex-col items-center">
-                                <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Win Probability</div>
-                                <div className="w-full flex items-center justify-between text-[11px] font-bold mb-1">
-                                    <span className="text-slate-900 dark:text-white">33%</span>
-                                    <span className="text-blue-500">67%</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                                    <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 dark:from-emerald-500 dark:to-emerald-600" style={{ width: '33%' }}></div>
-                                    <div className="h-full bg-gradient-to-r from-blue-400 to-blue-500 dark:from-blue-500 dark:to-blue-600" style={{ width: '67%' }}></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        );
+                    })()}
 
                     {/* Recent Results */}
                     <div className="bg-white dark:bg-[#13131a] rounded-[20px] border border-slate-200 dark:border-[#1e1e2a] p-5 flex flex-col justify-between">
@@ -280,20 +273,18 @@ const LiveMatchPulseCenter = ({ onSelectMatch }) => {
                             <button className="text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">View All Results</button>
                         </div>
                         <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">India vs South Africa</span>
+                            {matches.filter(m => !m.isLive && m.statusText && (m.statusText.toLowerCase().includes('won') || m.statusText.toLowerCase().includes('result'))).slice(0, 3).map(m => (
+                                <div key={m.id} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{m.teamA} vs {m.teamB}</span>
+                                    </div>
+                                    <span className="text-[10px] font-medium text-slate-500">{m.statusText}</span>
                                 </div>
-                                <span className="text-[10px] font-medium text-slate-500">IND won by 6 wickets</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Australia vs West Indies</span>
-                                </div>
-                                <span className="text-[10px] font-medium text-slate-500">AUS won by 201 runs</span>
-                            </div>
+                            ))}
+                            {matches.filter(m => !m.isLive && m.statusText && (m.statusText.toLowerCase().includes('won') || m.statusText.toLowerCase().includes('result'))).length === 0 && (
+                                <div className="text-xs text-slate-500">West Indies won by 18 runs against New Zealand</div>
+                            )}
                         </div>
                     </div>
                 </div>

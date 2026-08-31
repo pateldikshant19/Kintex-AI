@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Trophy, History, Zap, ArrowLeftRight, ChevronRight, User } from 'lucide-react';
+import { Search, Trophy, History, Zap, ArrowLeftRight, ChevronRight, User, X } from 'lucide-react';
 import PerformanceSignature from './PerformanceSignature';
 
 const PlayerEncyclopedia = () => {
     const [players, setPlayers] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState(null);
+    const [comparePlayer, setComparePlayer] = useState(null);
+    const [isCompareOpen, setIsCompareOpen] = useState(false);
 
     useEffect(() => {
         const fetchPlayers = async () => {
             try {
                 const API_URL = process.env.REACT_APP_API_URL || '/api';
-                // If search term is empty, fetch default famous players list
                 const endpoint = searchTerm.trim().length > 0 
                     ? `${API_URL}/public/players/search?q=${searchTerm}`
                     : `${API_URL}/public/players`;
@@ -21,28 +22,34 @@ const PlayerEncyclopedia = () => {
                 
                 if (data && data.length > 0) {
                     const mappedPlayers = data.map((p, idx) => {
+                        const defaultMetrics = p.radarMetrics || {
+                            power: 85,
+                            speed: 82,
+                            precision: 90,
+                            timing: 88,
+                            endurance: 85,
+                            technique: 92
+                        };
+
                         return {
                             id: p.playerId || p._id || String(idx),
                             name: p.name,
                             sport: p.sport || 'Cricket',
                             team: p.teamName || 'Global League',
                             role: p.role || 'Professional Cricketer',
-                            metrics: { 
-                                power: Math.floor(Math.random()*40)+60, 
-                                speed: Math.floor(Math.random()*40)+60, 
-                                precision: Math.floor(Math.random()*40)+60, 
-                                timing: Math.floor(Math.random()*40)+60, 
-                                endurance: Math.floor(Math.random()*40)+60, 
-                                technique: Math.floor(Math.random()*40)+60 
-                            },
+                            metrics: defaultMetrics,
+                            careerStats: p.careerStats || { matches: 150, batAvg: 45.0, strikeRate: 135.0, wickets: 25 },
                             records: p.records && p.records.length > 0 ? p.records : ['International Professional', 'National Team Cap'],
                             bio: p.bio || 'Real player data loaded from Kinetix secure database.',
-                            injury: 'None' // Stripped out for public
+                            injury: 'None'
                         };
                     });
                     setPlayers(mappedPlayers);
                     if (mappedPlayers.length > 0 && !selectedPlayer) {
                         setSelectedPlayer(mappedPlayers[0]);
+                        if (mappedPlayers.length > 1) {
+                            setComparePlayer(mappedPlayers[1]);
+                        }
                     }
                 } else {
                     setPlayers([]);
@@ -54,17 +61,16 @@ const PlayerEncyclopedia = () => {
 
         const timeoutId = setTimeout(() => {
             fetchPlayers();
-        }, 500); // 500ms debounce
+        }, 500);
 
         return () => clearTimeout(timeoutId);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchTerm]);
 
-    // We no longer filter locally since the backend handles it
     const filteredPlayers = players;
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8 bg-white dark:bg-[#09090b] text-slate-900 dark:text-white rounded-[40px] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden min-h-[800px]">
+        <div className="max-w-7xl mx-auto px-4 py-8 bg-white dark:bg-[#09090b] text-slate-900 dark:text-white rounded-[40px] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden min-h-[800px] relative">
             <div className="flex flex-col md:flex-row gap-12">
                 {/* Left Sidebar - Search & List */}
                 <div className="md:w-1/3 border-r border-slate-200 dark:border-white/5 pr-8">
@@ -93,15 +99,15 @@ const PlayerEncyclopedia = () => {
                             >
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center font-black text-xs">
+                                        <div className="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center font-black text-xs text-white">
                                             {p.name ? p.name.split(' ').map(n=>n[0]).join('').substring(0, 2) : '?'}
                                         </div>
                                         <div>
                                             <h4 className="text-xs font-black uppercase tracking-widest leading-none mb-1">{p.name || 'Unknown'}</h4>
-                                            <p className={`text-[9px] font-bold uppercase ${selectedPlayer?.id === p.id ? 'text-blue-200' : 'text-slate-600'}`}>{p.team}</p>
+                                            <p className={`text-[9px] font-bold uppercase ${selectedPlayer?.id === p.id ? 'text-blue-200 dark:text-blue-600' : 'text-slate-600'}`}>{p.team}</p>
                                         </div>
                                     </div>
-                                    <ChevronRight size={16} className={selectedPlayer?.id === p.id ? 'text-white' : 'text-slate-700'} />
+                                    <ChevronRight size={16} className={selectedPlayer?.id === p.id ? 'text-white dark:text-black' : 'text-slate-700'} />
                                 </div>
                             </div>
                         ))}
@@ -118,7 +124,7 @@ const PlayerEncyclopedia = () => {
                                         <div className="px-3 py-1 bg-blue-600 text-white text-[9px] font-black uppercase tracking-widest rounded-full">{selectedPlayer.sport}</div>
                                         <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">PLATINUM CORE RANK</div>
                                     </div>
-                                    <h2 className="text-6xl font-black italic italic-700 tracking-tighter text-white tracking-widest uppercase truncate max-w-md">{selectedPlayer.name}</h2>
+                                    <h2 className="text-6xl font-black italic tracking-tighter text-slate-900 dark:text-white tracking-widest uppercase truncate max-w-md">{selectedPlayer.name}</h2>
                                     <p className="text-xl font-black text-blue-500 italic uppercase tracking-widest mt-2">{selectedPlayer.role} • {selectedPlayer.team}</p>
                                 </div>
                                 
@@ -126,7 +132,7 @@ const PlayerEncyclopedia = () => {
                            </div>
 
                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <section className="p-8 bg-white/5 rounded-[32px] border border-white/10 relative overflow-hidden group">
+                                <section className="p-8 bg-slate-50 dark:bg-white/5 rounded-[32px] border border-slate-200 dark:border-white/10 relative overflow-hidden group">
                                     <div className="absolute top-0 right-0 w-24 h-24 bg-blue-600/10 rounded-full -mr-12 -mt-12 blur-3xl transition-all group-hover:bg-blue-600/30"></div>
                                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
                                         <Trophy size={14} className="text-amber-500" /> CAREER RECORDS
@@ -135,33 +141,37 @@ const PlayerEncyclopedia = () => {
                                         {selectedPlayer.records.map((r, i) => (
                                             <li key={i} className="flex items-start gap-4">
                                                 <Zap size={14} className="text-blue-500 mt-1 shrink-0" />
-                                                <p className="text-sm font-bold text-slate-300 italic uppercase leading-relaxed tracking-tight">{r}</p>
+                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300 italic uppercase leading-relaxed tracking-tight">{r}</p>
                                             </li>
                                         ))}
                                     </ul>
                                 </section>
 
-                                <section className="p-8 bg-white/5 rounded-[32px] border border-white/10 group">
+                                <section className="p-8 bg-slate-50 dark:bg-white/5 rounded-[32px] border border-slate-200 dark:border-white/10 group">
                                     <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-6">
-                                        <History size={14} className="text-emerald-500" /> INJURY TIMELINE
+                                        <History size={14} className="text-emerald-500" /> INJURY TIMELINE & BIO
                                     </h3>
                                     <div className="flex flex-col gap-6">
                                         <div className="flex items-center gap-4">
                                             <div className={`w-3 h-3 rounded-full ${selectedPlayer.injury === 'None' ? 'bg-emerald-500' : 'bg-rose-500'} shadow-[0_0_10px_currentColor]`}></div>
-                                            <p className="text-sm font-black italic uppercase text-white tracking-widest leading-none">{selectedPlayer.injury}</p>
+                                            <p className="text-sm font-black italic uppercase text-slate-900 dark:text-white tracking-widest leading-none">{selectedPlayer.injury}</p>
                                         </div>
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed">RAPIDAPI KINETIX SECURE RECORD: <span className="text-emerald-500">VERIFIED</span></p>
-                                        <p className="text-xs text-slate-400 italic font-medium leading-relaxed">"{selectedPlayer.bio}"</p>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed">KINETIX SECURE RECORD: <span className="text-emerald-500">VERIFIED</span></p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 italic font-medium leading-relaxed">"{selectedPlayer.bio}"</p>
                                     </div>
                                 </section>
                            </div>
 
-                           <div className="mt-12 p-8 bg-slate-900 dark:bg-white rounded-[32px] flex items-center justify-between group cursor-pointer hover:shadow-2xl transition-all active:scale-95">
+                           {/* Interactive Compare Signatures Button */}
+                           <div 
+                                onClick={() => setIsCompareOpen(true)}
+                                className="mt-12 p-8 bg-slate-900 dark:bg-white rounded-[32px] flex items-center justify-between group cursor-pointer hover:shadow-2xl transition-all active:scale-95 text-white dark:text-black"
+                           >
                                 <div>
-                                    <h4 className="text-2xl font-black italic tracking-widest text-white dark:text-black leading-none mb-1">COMPARE SIGNATURES</h4>
-                                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">BATTLE MECHANIC: ANALYZE DELTA BETWEEN ELITES</p>
+                                    <h4 className="text-2xl font-black italic tracking-widest leading-none mb-1">COMPARE SIGNATURES</h4>
+                                    <p className="text-[10px] font-black opacity-70 uppercase tracking-widest">BATTLE MECHANIC: ANALYZE DELTA BETWEEN ELITES</p>
                                 </div>
-                                <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center text-white transition-all group-hover:rotate-12">
+                                <div className="w-14 h-14 rounded-2xl bg-white/20 dark:bg-black/20 flex items-center justify-center transition-all group-hover:rotate-12">
                                     <ArrowLeftRight size={24} />
                                 </div>
                            </div>
@@ -175,8 +185,96 @@ const PlayerEncyclopedia = () => {
                     )}
                 </div>
             </div>
+
+            {/* SIDE-BY-SIDE PLAYER COMPARISON MODAL */}
+            {isCompareOpen && selectedPlayer && (
+                <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-[32px] w-full max-w-4xl p-6 md:p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                        <button 
+                            onClick={() => setIsCompareOpen(false)}
+                            className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+
+                        <div className="text-center mb-8">
+                            <h3 className="text-3xl font-black italic tracking-widest text-slate-900 dark:text-white uppercase">PLAYER SIGNATURE COMPARISON</h3>
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">HEAD-TO-HEAD BIOMECHANICAL & STATISTICAL ANALYSIS</p>
+                        </div>
+
+                        {/* Player Selection Selectors */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                            <div className="p-4 bg-slate-50 dark:bg-[#0a0a0c] rounded-2xl border border-slate-200 dark:border-[#1e1e2a]">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Player 1 (Selected)</label>
+                                <div className="text-lg font-black text-slate-900 dark:text-white uppercase">{selectedPlayer.name}</div>
+                                <div className="text-xs text-blue-500 font-bold uppercase">{selectedPlayer.role} • {selectedPlayer.team}</div>
+                            </div>
+
+                            <div className="p-4 bg-slate-50 dark:bg-[#0a0a0c] rounded-2xl border border-slate-200 dark:border-[#1e1e2a]">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block mb-2">Player 2 (Opponent)</label>
+                                <select 
+                                    value={comparePlayer?.id || ''} 
+                                    onChange={(e) => {
+                                        const p = players.find(x => x.id === e.target.value);
+                                        if (p) setComparePlayer(p);
+                                    }}
+                                    className="w-full bg-white dark:bg-[#13131a] border border-slate-200 dark:border-slate-700 rounded-xl py-2 px-3 text-sm font-bold text-slate-900 dark:text-white focus:outline-none uppercase"
+                                >
+                                    {players.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name} ({p.team})</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Comparison Grid */}
+                        {comparePlayer && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="flex flex-col items-center p-6 bg-slate-50 dark:bg-[#0a0a0c] rounded-3xl border border-slate-200 dark:border-[#1e1e2a]">
+                                    <h4 className="text-lg font-black text-blue-500 uppercase mb-4">{selectedPlayer.name}</h4>
+                                    <PerformanceSignature metrics={selectedPlayer.metrics} color="#3B82F6" size={200} />
+                                    <div className="w-full mt-6 space-y-2 text-xs font-bold">
+                                        <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1">
+                                            <span className="text-slate-400">Batting Average:</span>
+                                            <span className="text-slate-900 dark:text-white font-black">{selectedPlayer.careerStats?.batAvg || 45.2}</span>
+                                        </div>
+                                        <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1">
+                                            <span className="text-slate-400">Strike Rate:</span>
+                                            <span className="text-slate-900 dark:text-white font-black">{selectedPlayer.careerStats?.strikeRate || 138.4}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Wickets:</span>
+                                            <span className="text-slate-900 dark:text-white font-black">{selectedPlayer.careerStats?.wickets || 8}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col items-center p-6 bg-slate-50 dark:bg-[#0a0a0c] rounded-3xl border border-slate-200 dark:border-[#1e1e2a]">
+                                    <h4 className="text-lg font-black text-emerald-500 uppercase mb-4">{comparePlayer.name}</h4>
+                                    <PerformanceSignature metrics={comparePlayer.metrics} color="#10B981" size={200} />
+                                    <div className="w-full mt-6 space-y-2 text-xs font-bold">
+                                        <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1">
+                                            <span className="text-slate-400">Batting Average:</span>
+                                            <span className="text-slate-900 dark:text-white font-black">{comparePlayer.careerStats?.batAvg || 42.0}</span>
+                                        </div>
+                                        <div className="flex justify-between border-b border-slate-200 dark:border-slate-800 pb-1">
+                                            <span className="text-slate-400">Strike Rate:</span>
+                                            <span className="text-slate-900 dark:text-white font-black">{comparePlayer.careerStats?.strikeRate || 132.0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-slate-400">Wickets:</span>
+                                            <span className="text-slate-900 dark:text-white font-black">{comparePlayer.careerStats?.wickets || 15}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
 export default PlayerEncyclopedia;
+

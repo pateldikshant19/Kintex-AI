@@ -85,25 +85,22 @@ const runPythonScript = (scriptName, args) => {
 // GET all matches list
 router.get('/matches', async (req, res) => {
     try {
-        const matches = await LiveMatch.find().sort({ updatedAt: -1 }).limit(20);
+        const cricketDataProvider = require('../services/cricketDataProvider');
+        let matches = [];
         
-        // Map CricAPI schema to our frontend schema
-        const list = matches.map(m => {
-            const firstInnings = m.score && m.score.length > 0 ? m.score[0] : null;
-            return {
-                id: m.match_id,
-                matchName: m.name,
-                venue: m.venue || "Unknown Venue",
-                date: m.date,
-                status: m.status,
-                target: null,
-                runs: firstInnings ? firstInnings.r : 0,
-                wickets: firstInnings ? firstInnings.w : 0,
-                overs: firstInnings ? firstInnings.o : 0
-            };
-        });
-        
-        res.json(list);
+        try {
+            matches = await LiveMatch.find().sort({ updatedAt: -1 }).limit(20);
+        } catch (dbErr) {
+            console.warn('[GET /api/cricket/matches] DB query warning:', dbErr.message);
+        }
+
+        if (matches && matches.length > 0) {
+            const { normalizeMatchList } = require('../utils/scoreNormalizer');
+            return res.json(normalizeMatchList(matches));
+        }
+
+        const liveList = await cricketDataProvider.getLiveMatches();
+        res.json(liveList);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Failed to fetch matches" });

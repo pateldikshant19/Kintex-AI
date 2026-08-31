@@ -101,9 +101,17 @@ mongoose.connection.on('disconnected', () => {
   setTimeout(connectDB, 3000);
 });
 
+// ─── Live Match Socket.IO Broadcast Background Daemon ───────────────
+const liveMatchEngine = require('./services/liveMatchEngine');
+
+const startLiveMatchDaemon = () => {
+  liveMatchEngine.startMonitoring(io);
+};
+
 // ─── Start Server / Export App ───────────────────────────────────────
 if (require.main === module) {
   server.listen(PORT, () => {
+    startLiveMatchDaemon();
     console.log('');
     console.log('  ╔══════════════════════════════════════════════════════╗');
     console.log('  ║          KINETIX AI — Backend Server                ║');

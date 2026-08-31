@@ -1,5 +1,21 @@
 const mongoose = require('mongoose');
 
+const formatStatSchema = new mongoose.Schema({
+  matches: { type: Number, default: 0 },
+  runs: { type: Number, default: 0 },
+  avg: { type: Number, default: 0 },
+  sr: { type: Number, default: 0 },
+  centuries: { type: Number, default: 0 },
+  fifties: { type: Number, default: 0 },
+  highScore: { type: String, default: '0' },
+  wickets: { type: Number, default: 0 },
+  bowlAvg: { type: Number, default: 0 },
+  economy: { type: Number, default: 0 },
+  bestBowling: { type: String, default: '0/0' },
+  catches: { type: Number, default: 0 },
+  stumpings: { type: Number, default: 0 }
+}, { _id: false });
+
 const playerSchema = new mongoose.Schema({
   // Basic Public Data (Cricbuzz RapidAPI)
   playerId: { type: String, unique: true }, // From RapidAPI
@@ -12,7 +28,7 @@ const playerSchema = new mongoose.Schema({
   battingStyle: { type: String },
   bowlingStyle: { type: String },
   country: { type: String },
-  imageId: { type: Number }, // Cricbuzz image ID
+  imageId: { type: String }, // Cricbuzz image ID or URL
   bio: String,
   records: [{ type: String }], // Real achievements/rankings
   active: { type: Boolean, default: true },
@@ -20,6 +36,36 @@ const playerSchema = new mongoose.Schema({
   currentTeamId: { type: Number },
   activeLeagueIds: [{ type: Number }], // Supports multiple leagues simultaneously
   updatedAt: { type: Date, default: Date.now },
+
+  // Detailed Format Statistics
+  stats: {
+    test: formatStatSchema,
+    odi: formatStatSchema,
+    t20i: formatStatSchema,
+    ipl: formatStatSchema
+  },
+
+  // Career Summary Stats
+  careerStats: {
+    matches: Number,
+    batAvg: Number,
+    strikeRate: Number,
+    centuries: Number,
+    fifties: Number,
+    wickets: Number,
+    bowlAvg: Number,
+    economy: Number
+  },
+
+  // Spatial Radar Attributes
+  radarMetrics: {
+    power: { type: Number, default: 85 },
+    speed: { type: Number, default: 80 },
+    precision: { type: Number, default: 90 },
+    timing: { type: Number, default: 88 },
+    endurance: { type: Number, default: 85 },
+    technique: { type: Number, default: 92 }
+  },
 
   // Pro Features (Manager/Analyst Data)
   physicalStats: {

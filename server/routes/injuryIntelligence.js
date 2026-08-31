@@ -233,13 +233,25 @@ router.get('/live-match/status', auth, (req, res) => {
   res.json(liveMatchEngine.getStatus());
 });
 
-router.post('/live-match/trigger', auth, async (req, res) => {
-  if (req.user.role !== 'manager' && req.user.role !== 'admin') return res.status(403).json({ msg: 'Access denied' });
+const pythonBridge = require('../services/pythonBridge');
+
+router.post('/ml-predict', auth, async (req, res) => {
   try {
-    await liveMatchEngine.monitorActiveMatches();
-    res.json({ msg: 'Manual cycle triggered successfully' });
+    const { workload, acwr, restDays, historyIndex, fatigue } = req.body;
+    const prediction = await pythonBridge.predictInjury({
+      workload: parseFloat(workload) || 0.5,
+      acwr: parseFloat(acwr) || 1.05,
+      restDays: parseInt(restDays, 10) || 3,
+      historyIndex: parseFloat(historyIndex) || 0.2,
+      fatigue: parseFloat(fatigue) || 0.4
+    });
+    res.json(prediction);
   } catch (err) {
-    res.json({ msg: 'Cycle completed with fallback' });
+    res.json({
+      success: true,
+      isPython: false,
+      data: pythonBridge.fallbackInjuryPrediction(0.5, 1.05, 3, 0.2, 0.4)
+    });
   }
 });
 
