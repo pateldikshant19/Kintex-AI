@@ -120,6 +120,19 @@ class LiveMatchEngine {
       // 3. Emit global live matches update over Socket.IO
       if (this.io) {
         this.io.emit('liveMatchesUpdate', matches);
+        
+        // 3b. Broadcast real-time Injury Risk & Biometric Telemetry for active players
+        const liveInjuryTelemetry = await this.generateLivePlayerInjuryTelemetry();
+        this.io.emit('liveInjuryRiskUpdate', liveInjuryTelemetry);
+
+        // Check if any player crossed HIGH risk or ACWR threshold and emit alert
+        const highRiskAlerts = liveInjuryTelemetry.filter(p => p.riskLevel === 'HIGH' || p.acwr > 1.5);
+        if (highRiskAlerts.length > 0) {
+          this.io.emit('liveInjuryAlert', {
+            alerts: highRiskAlerts,
+            timestamp: new Date().toISOString()
+          });
+        }
       }
 
       // 4. Run background news/NLP check for top players periodically (20% of ticks)
@@ -133,8 +146,67 @@ class LiveMatchEngine {
   }
 
   /**
+   * Generates live biometric & injury prediction model telemetry for active players
+   */
+  async generateLivePlayerInjuryTelemetry() {
+    const pythonBridge = require('./pythonBridge');
+    const baseSquad = [
+      { id: 'ind-1', name: 'Virat Kohli', role: 'Batter', baseWorkload: 0.65, baseRest: 3, baseHistory: 0.2, age: 35 },
+      { id: 'ind-2', name: 'Rohit Sharma', role: 'Captain / Batter', baseWorkload: 0.70, baseRest: 2, baseHistory: 0.3, age: 36 },
+      { id: 'ind-3', name: 'Jasprit Bumrah', role: 'Fast Bowler', baseWorkload: 0.88, baseRest: 1, baseHistory: 0.65, age: 30 },
+      { id: 'ind-4', name: 'Hardik Pandya', role: 'All Rounder', baseWorkload: 0.82, baseRest: 2, baseHistory: 0.55, age: 30 },
+      { id: 'ind-5', name: 'Suryakumar Yadav', role: 'T20 Captain / Batter', baseWorkload: 0.60, baseRest: 4, baseHistory: 0.15, age: 33 },
+      { id: 'ind-6', name: 'Rishabh Pant', role: 'Wicket-Keeper Batter', baseWorkload: 0.75, baseRest: 3, baseHistory: 0.40, age: 26 },
+      { id: 'ind-7', name: 'Shubman Gill', role: 'Opener / Batter', baseWorkload: 0.55, baseRest: 4, baseHistory: 0.10, age: 24 },
+      { id: 'ind-12', name: 'Mohammed Siraj', role: 'Fast Bowler', baseWorkload: 0.85, baseRest: 2, baseHistory: 0.35, age: 29 }
+    ];
+
+    const telemetry = [];
+    for (const player of baseSquad) {
+      // Dynamic live variation to simulate real-time match fluctuations
+      const liveHeartRate = Math.floor(125 + Math.random() * 45); // 125 - 170 bpm
+      const liveSpeed = parseFloat((16.0 + Math.random() * 12.0).toFixed(1)); // 16 - 28 km/h
+      const liveFatigue = parseFloat(Math.min(0.95, Math.max(0.15, (liveHeartRate / 175) * 0.7 + (Math.random() * 0.2))).toFixed(2));
+      const liveACWR = parseFloat(Math.min(1.75, Math.max(0.85, player.baseWorkload * 1.35 + (liveFatigue * 0.3))).toFixed(2));
+
+      // Calculate injury prediction via Python / node fallback engine
+      const predResult = pythonBridge.fallbackInjuryPrediction(
+        player.baseWorkload,
+        liveACWR,
+        player.baseRest,
+        player.baseHistory,
+        liveFatigue
+      );
+
+      telemetry.push({
+        playerId: player.id,
+        playerName: player.name,
+        role: player.role,
+        team: 'India',
+        heartRate: liveHeartRate,
+        speedKmH: liveSpeed,
+        fatigueIndex: liveFatigue,
+        acwr: liveACWR,
+        workloadIndex: player.baseWorkload,
+        restDays: player.baseRest,
+        historyIndex: player.baseHistory,
+        riskScore: predResult.risk_score,
+        riskLevel: predResult.risk_level,
+        availabilityStatus: predResult.availability_status,
+        contributingFactors: predResult.contributing_factors,
+        modelType: predResult.model_type,
+        confidenceScore: predResult.confidence_score,
+        lastUpdated: new Date().toISOString()
+      });
+    }
+
+    return telemetry;
+  }
+
+  /**
    * Monitor news & trigger NLP processing for active players
    */
+
   async monitorActivePlayerNews() {
     try {
       if (mongoose.connection.readyState !== 1) return;

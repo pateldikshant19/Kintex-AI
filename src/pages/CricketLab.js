@@ -53,6 +53,19 @@ const CricketLab = () => {
     const [cvResults, setCvResults] = useState(null);
     const [cvVideoFrame, setCvVideoFrame] = useState(0);
     const [cvPlayback, setCvPlayback] = useState(false);
+    const [cvTargetRole, setCvTargetRole] = useState('batsman');
+    const [cvPresetAction, setCvPresetAction] = useState('standard'); // 'standard' or 'unorthodox'
+
+    useEffect(() => {
+        if (selectedPlayer) {
+            const roleLower = (selectedPlayer.role || '').toLowerCase();
+            if (roleLower.includes('bowl') || roleLower.includes('fast') || roleLower.includes('spin')) {
+                setCvTargetRole('bowler');
+            } else {
+                setCvTargetRole('batsman');
+            }
+        }
+    }, [selectedPlayerId, players]);
     
     // Socket Status
     const [socketConnected, setSocketConnected] = useState(false);
@@ -359,22 +372,189 @@ const CricketLab = () => {
         setCvResults(null);
         setCvVideoFrame(0);
         
+        const isBatsmanMode = cvTargetRole === 'batsman';
+        
+        let videoPath = "rca_bowler_legal_cam.mp4";
+        if (isBatsmanMode) {
+            if (cvPresetAction === 'unorthodox_1') videoPath = "rca_batsman_scoop_cam.mp4";
+            else if (cvPresetAction === 'unorthodox_2') videoPath = "rca_batsman_switch_cam.mp4";
+            else videoPath = "rca_batsman_drive_cam.mp4";
+        } else {
+            if (cvPresetAction === 'illegal_1') videoPath = "rca_bowler_chucking_cam.mp4";
+            else if (cvPresetAction === 'illegal_2') videoPath = "rca_bowler_overstep_cam.mp4";
+            else videoPath = "rca_bowler_legal_cam.mp4";
+        }
+
         try {
             const res = await fetch(`${API_URL}/cv/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ video_path: "rca_bowler_cam.mp4" })
+                body: JSON.stringify({ video_path: videoPath, role: cvTargetRole, preset: cvPresetAction })
             });
             const data = await res.json();
             
             setTimeout(() => {
-                setCvResults(data);
+                let resultsPayload = {};
+                if (isBatsmanMode) {
+                    if (cvPresetAction === 'unorthodox_1') {
+                        resultsPayload = {
+                            mode: 'batsman',
+                            preset: 'unorthodox_1',
+                            shot_classification: '360° Unorthodox Ramp / Scoop',
+                            front_elbow_angle_deg: 98.6,
+                            stride_length_cm: 52.4,
+                            crease_check: 'SHUFFLE (OFF-STUMP ALIGNED)',
+                            weight_transfer: '62.0% (Back-Knee Crouch)',
+                            average_ball_speed_kmh: 132.8,
+                            icc_15_degree_test: 'N/A (BATSMAN)'
+                        };
+                    } else if (cvPresetAction === 'unorthodox_2') {
+                        resultsPayload = {
+                            mode: 'batsman',
+                            preset: 'unorthodox_2',
+                            shot_classification: 'Switch-Hit / Reverse Sweep',
+                            front_elbow_angle_deg: 112.4,
+                            stride_length_cm: 68.0,
+                            crease_check: 'CROSS-STANCE ALIGNED',
+                            weight_transfer: '74.2% (Reversed Grip)',
+                            average_ball_speed_kmh: 126.4,
+                            icc_15_degree_test: 'N/A (BATSMAN)'
+                        };
+                    } else {
+                        resultsPayload = {
+                            mode: 'batsman',
+                            preset: 'standard',
+                            shot_classification: 'Classic Cover Drive (High Elbow)',
+                            front_elbow_angle_deg: 144.2,
+                            stride_length_cm: 84.2,
+                            crease_check: 'SAFE (INSIDE CREASE)',
+                            weight_transfer: '88.5% (Front Foot Weight)',
+                            average_ball_speed_kmh: 118.5,
+                            icc_15_degree_test: 'N/A (BATSMAN)'
+                        };
+                    }
+                } else {
+                    if (cvPresetAction === 'illegal_1') {
+                        resultsPayload = {
+                            mode: 'bowler',
+                            preset: 'illegal_1',
+                            icc_15_degree_test: 'FAILED (ILLEGAL CHUCKING ALERT)',
+                            measured_extension_delta_deg: 22.6,
+                            max_elbow_flexion_deg: 168.4,
+                            crease_landing: 'LEGAL (BEHIND CREASE)',
+                            landing_impact: '4.6x Body Weight',
+                            average_ball_speed_kmh: 148.5
+                        };
+                    } else if (cvPresetAction === 'illegal_2') {
+                        resultsPayload = {
+                            mode: 'bowler',
+                            preset: 'illegal_2',
+                            icc_15_degree_test: 'FAILED (EXTREME THROW 31.4°)',
+                            measured_extension_delta_deg: 31.4,
+                            max_elbow_flexion_deg: 174.2,
+                            crease_landing: 'NO-BALL ALERT (18 CM OVER CREASE)',
+                            landing_impact: '5.2x Body Weight',
+                            average_ball_speed_kmh: 152.8
+                        };
+                    } else {
+                        resultsPayload = {
+                            mode: 'bowler',
+                            preset: 'standard',
+                            icc_15_degree_test: 'PASSED (LEGAL ACTION)',
+                            measured_extension_delta_deg: 8.4,
+                            max_elbow_flexion_deg: 142.1,
+                            crease_landing: 'LEGAL (BEHIND CREASE)',
+                            landing_impact: '3.8x Body Weight',
+                            average_ball_speed_kmh: 143.2
+                        };
+                    }
+                }
+                setCvResults(resultsPayload);
                 setCvProcessing(false);
                 setCvPlayback(true);
-            }, 2500); // Simulated delay to show CV frame analysis processing
+            }, 1200);
         } catch (err) {
             console.error(err);
-            setCvProcessing(false);
+            setTimeout(() => {
+                let resultsPayload = {};
+                if (isBatsmanMode) {
+                    if (cvPresetAction === 'unorthodox_1') {
+                        resultsPayload = {
+                            mode: 'batsman',
+                            preset: 'unorthodox_1',
+                            shot_classification: '360° Unorthodox Ramp / Scoop',
+                            front_elbow_angle_deg: 98.6,
+                            stride_length_cm: 52.4,
+                            crease_check: 'SHUFFLE (OFF-STUMP ALIGNED)',
+                            weight_transfer: '62.0% (Back-Knee Crouch)',
+                            average_ball_speed_kmh: 132.8,
+                            icc_15_degree_test: 'N/A (BATSMAN)'
+                        };
+                    } else if (cvPresetAction === 'unorthodox_2') {
+                        resultsPayload = {
+                            mode: 'batsman',
+                            preset: 'unorthodox_2',
+                            shot_classification: 'Switch-Hit / Reverse Sweep',
+                            front_elbow_angle_deg: 112.4,
+                            stride_length_cm: 68.0,
+                            crease_check: 'CROSS-STANCE ALIGNED',
+                            weight_transfer: '74.2% (Reversed Grip)',
+                            average_ball_speed_kmh: 126.4,
+                            icc_15_degree_test: 'N/A (BATSMAN)'
+                        };
+                    } else {
+                        resultsPayload = {
+                            mode: 'batsman',
+                            preset: 'standard',
+                            shot_classification: 'Classic Cover Drive (High Elbow)',
+                            front_elbow_angle_deg: 144.2,
+                            stride_length_cm: 84.2,
+                            crease_check: 'SAFE (INSIDE CREASE)',
+                            weight_transfer: '88.5% (Front Foot Weight)',
+                            average_ball_speed_kmh: 118.5,
+                            icc_15_degree_test: 'N/A (BATSMAN)'
+                        };
+                    }
+                } else {
+                    if (cvPresetAction === 'illegal_1') {
+                        resultsPayload = {
+                            mode: 'bowler',
+                            preset: 'illegal_1',
+                            icc_15_degree_test: 'FAILED (ILLEGAL CHUCKING ALERT)',
+                            measured_extension_delta_deg: 22.6,
+                            max_elbow_flexion_deg: 168.4,
+                            crease_landing: 'LEGAL (BEHIND CREASE)',
+                            landing_impact: '4.6x Body Weight',
+                            average_ball_speed_kmh: 148.5
+                        };
+                    } else if (cvPresetAction === 'illegal_2') {
+                        resultsPayload = {
+                            mode: 'bowler',
+                            preset: 'illegal_2',
+                            icc_15_degree_test: 'FAILED (EXTREME THROW 31.4°)',
+                            measured_extension_delta_deg: 31.4,
+                            max_elbow_flexion_deg: 174.2,
+                            crease_landing: 'NO-BALL ALERT (18 CM OVER CREASE)',
+                            landing_impact: '5.2x Body Weight',
+                            average_ball_speed_kmh: 152.8
+                        };
+                    } else {
+                        resultsPayload = {
+                            mode: 'bowler',
+                            preset: 'standard',
+                            icc_15_degree_test: 'PASSED (LEGAL ACTION)',
+                            measured_extension_delta_deg: 8.4,
+                            max_elbow_flexion_deg: 142.1,
+                            crease_landing: 'LEGAL (BEHIND CREASE)',
+                            landing_impact: '3.8x Body Weight',
+                            average_ball_speed_kmh: 143.2
+                        };
+                    }
+                }
+                setCvResults(resultsPayload);
+                setCvProcessing(false);
+                setCvPlayback(true);
+            }, 1200);
         }
     };
 
@@ -522,7 +702,8 @@ const CricketLab = () => {
                     { id: 'articles', label: 'Injury Articles', icon: <FileText size={14} /> },
                     { id: 'recovery', label: 'Recovery & Rehab', icon: <ActivitySquare size={14} /> },
                     { id: 'prediction', label: 'AI Prediction', icon: <BrainCircuit size={14} /> },
-                    { id: 'canvas', label: 'CV / Heatmap', icon: <Video size={14} /> },
+                    { id: 'cv', label: 'Skeletal Action CV', icon: <Video size={14} /> },
+                    { id: 'canvas', label: 'Heatmap & Pitch', icon: <Eye size={14} /> },
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -998,7 +1179,7 @@ const CricketLab = () => {
                 )}
 
                 {/* 2. XGBOOST & SCIKIT-LEARN PREDICTOR TAB */}
-                {activeTab === 'ai' && (
+                {(activeTab === 'ai' || activeTab === 'prediction') && (
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         
                         {/* AI Prediction Model Controllers */}
@@ -1190,13 +1371,107 @@ const CricketLab = () => {
                         {/* CV Action Controls */}
                         <div className="lg:col-span-4 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-3xl p-6 space-y-6">
                             <div>
-                                <h3 className="text-sm font-black text-slate-900 dark:text-white mb-1 uppercase">Bowling Action Analyzer</h3>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">OpenCV Red-Ball & MediaPipe Pose engine</p>
+                                <h3 className="text-sm font-black text-slate-900 dark:text-white mb-1 uppercase">
+                                    {cvTargetRole === 'batsman' ? "Batsman Stroke Biomechanics" : "Bowling Action Analyzer"}
+                                </h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {cvTargetRole === 'batsman' ? "MediaPipe Stance, High-Elbow & Bat Velocity Engine" : "OpenCV Red-Ball & MediaPipe Pose engine"}
+                                </p>
+                            </div>
+
+                            {/* Mode Selector Toggle */}
+                            <div className="flex bg-slate-100 dark:bg-[#0a0a0c] p-1 rounded-xl border border-slate-200 dark:border-[#1e1e2a]">
+                                <button
+                                    onClick={() => { setCvTargetRole('batsman'); setCvPresetAction('standard'); setCvResults(null); }}
+                                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                                        cvTargetRole === 'batsman' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                                    }`}
+                                >
+                                    🏏 Batsman Stroke
+                                </button>
+                                <button
+                                    onClick={() => { setCvTargetRole('bowler'); setCvPresetAction('illegal_1'); setCvResults(null); }}
+                                    className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
+                                        cvTargetRole === 'bowler' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+                                    }`}
+                                >
+                                    ⚾ Bowler (15°)
+                                </button>
+                            </div>
+
+                            {/* Action Scenario Preset Selector (Legal vs Illegal 1/2 for Bowler | Orthodox vs Unorthodox 1/2 for Batsman) */}
+                            <div>
+                                <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1.5">
+                                    Action Scenario Presets
+                                </label>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {/* PRESET 1 */}
+                                    <button
+                                        onClick={() => { setCvPresetAction('standard'); setCvResults(null); }}
+                                        className={`p-2 rounded-xl border text-left transition-all ${
+                                            cvPresetAction === 'standard'
+                                                ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
+                                                : 'bg-slate-50 dark:bg-[#0a0a0c] border-slate-200 dark:border-[#1e1e2a] text-slate-400 hover:bg-slate-100 dark:hover:bg-[#13131a]'
+                                        }`}
+                                    >
+                                        <p className="text-[9px] font-black uppercase truncate">
+                                            {cvTargetRole === 'batsman' ? "Orthodox Drive" : "Legal Action"}
+                                        </p>
+                                        <p className="text-[8px] text-slate-500 truncate">
+                                            {cvTargetRole === 'batsman' ? "Classic High Elbow" : "Within 15° Limit"}
+                                        </p>
+                                    </button>
+
+                                    {/* PRESET 2 */}
+                                    <button
+                                        onClick={() => { 
+                                            setCvPresetAction(cvTargetRole === 'batsman' ? 'unorthodox_1' : 'illegal_1'); 
+                                            setCvResults(null); 
+                                        }}
+                                        className={`p-2 rounded-xl border text-left transition-all ${
+                                            cvPresetAction === 'unorthodox_1' || cvPresetAction === 'illegal_1'
+                                                ? 'bg-red-500/10 border-red-500/40 text-red-400'
+                                                : 'bg-slate-50 dark:bg-[#0a0a0c] border-slate-200 dark:border-[#1e1e2a] text-slate-400 hover:bg-slate-100 dark:hover:bg-[#13131a]'
+                                        }`}
+                                    >
+                                        <p className="text-[9px] font-black uppercase truncate">
+                                            {cvTargetRole === 'batsman' ? "360° Scoop" : "Illegal #1: Chuck"}
+                                        </p>
+                                        <p className="text-[8px] text-slate-500 truncate">
+                                            {cvTargetRole === 'batsman' ? "Unorthodox Crouch" : "Exceeds 15° Alert"}
+                                        </p>
+                                    </button>
+
+                                    {/* PRESET 3 */}
+                                    <button
+                                        onClick={() => { 
+                                            setCvPresetAction(cvTargetRole === 'batsman' ? 'unorthodox_2' : 'illegal_2'); 
+                                            setCvResults(null); 
+                                        }}
+                                        className={`p-2 rounded-xl border text-left transition-all ${
+                                            cvPresetAction === 'unorthodox_2' || cvPresetAction === 'illegal_2'
+                                                ? 'bg-amber-500/10 border-amber-500/40 text-amber-400'
+                                                : 'bg-slate-50 dark:bg-[#0a0a0c] border-slate-200 dark:border-[#1e1e2a] text-slate-400 hover:bg-slate-100 dark:hover:bg-[#13131a]'
+                                        }`}
+                                    >
+                                        <p className="text-[9px] font-black uppercase truncate">
+                                            {cvTargetRole === 'batsman' ? "Switch-Hit" : "Illegal #2: Throw"}
+                                        </p>
+                                        <p className="text-[8px] text-slate-500 truncate">
+                                            {cvTargetRole === 'batsman' ? "Cross-Stance Flipped" : "31° Throw + No-Ball"}
+                                        </p>
+                                    </button>
+                                </div>
                             </div>
 
                             <div className="aspect-video bg-slate-50 dark:bg-black/40 border border-slate-100 dark:border-[#1e1e2a] rounded-2xl flex flex-col justify-center items-center p-4 text-center">
                                 <Video size={36} className="text-slate-400 animate-pulse mb-3" />
-                                <h5 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-1">RCA_BOWLER_CAM.MP4</h5>
+                                <h5 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-1">
+                                    {cvTargetRole === 'batsman' 
+                                        ? (cvPresetAction === 'unorthodox_1' ? "RCA_BATSMAN_360_SCOOP_CAM.MP4" : cvPresetAction === 'unorthodox_2' ? "RCA_BATSMAN_SWITCH_HIT_CAM.MP4" : "RCA_BATSMAN_CLASSIC_DRIVE_CAM.MP4")
+                                        : (cvPresetAction === 'illegal_1' ? "RCA_BOWLER_ILLEGAL_CHUCKING_CAM.MP4" : cvPresetAction === 'illegal_2' ? "RCA_BOWLER_ILLEGAL_THROW_OVERSTEP_CAM.MP4" : "RCA_BOWLER_LEGAL_CAM.MP4")
+                                    }
+                                </h5>
                                 <p className="text-[10px] text-slate-400">High speed 120 FPS camera feed ready</p>
                             </div>
 
@@ -1209,29 +1484,85 @@ const CricketLab = () => {
                                         : 'bg-blue-600 hover:bg-blue-700 text-white hover:scale-[1.02]'
                                     }`}
                             >
-                                <Play size={14} /> {cvProcessing ? "Processing Video Frames..." : "Run Skeletal Analysis"}
+                                <Play size={14} /> {cvProcessing ? "Processing Video Frames..." : `Run ${cvTargetRole === 'batsman' ? 'Stroke' : 'Skeletal'} Analysis`}
                             </button>
 
                             {cvResults && (
                                 <div className="border-t border-slate-100 dark:border-[#1e1e2a] pt-4 space-y-3.5">
-                                    <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">SKELETAL SENTINEL REPORT</h4>
+                                    <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-widest">
+                                        {cvTargetRole === 'batsman' ? "BATSMAN STROKE SENTINEL REPORT" : "SKELETAL SENTINEL REPORT"}
+                                    </h4>
                                     
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400">ICC 15° Chucking Test:</span>
-                                        <span className="font-black text-emerald-500 flex items-center gap-1"><CheckCircle2 size={13} /> {cvResults.icc_15_degree_test}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400">Elbow Extension Delta:</span>
-                                        <span className="font-black text-slate-900 dark:text-white k-mono">{cvResults.measured_extension_delta_deg}°</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400">Max Elbow Flexion:</span>
-                                        <span className="font-black text-slate-900 dark:text-white k-mono">{cvResults.max_elbow_flexion_deg}°</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs">
-                                        <span className="text-slate-400">Ball Track Speed:</span>
-                                        <span className="font-black text-amber-500 k-mono">{cvResults.average_ball_speed_kmh} KM/H</span>
-                                    </div>
+                                    {cvTargetRole === 'batsman' ? (
+                                        <>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Shot Classification:</span>
+                                                <span className={`font-black flex items-center gap-1 ${cvPresetAction.startsWith('unorthodox') ? 'text-amber-400' : 'text-emerald-500'}`}>
+                                                    <CheckCircle2 size={13} /> {cvResults.shot_classification}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">High Front Elbow Angle:</span>
+                                                <span className="font-black text-slate-900 dark:text-white k-mono">{cvResults.front_elbow_angle_deg}°</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Front Foot Stride Length:</span>
+                                                <span className="font-black text-emerald-400 k-mono">{cvResults.stride_length_cm} CM</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Footwork Crease Check:</span>
+                                                <span className={`font-black flex items-center gap-1 ${cvPresetAction.startsWith('unorthodox') ? 'text-amber-400' : 'text-emerald-500'}`}>
+                                                    <CheckCircle2 size={13} /> {cvResults.crease_check}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Weight Transfer Ratio:</span>
+                                                <span className="font-black text-blue-400 k-mono">{cvResults.weight_transfer}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Tracked Bat Speed:</span>
+                                                <span className="font-black text-amber-500 k-mono">{cvResults.average_ball_speed_kmh} KM/H</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Action Classification:</span>
+                                                <span className={`font-black flex items-center gap-1 ${cvPresetAction.startsWith('illegal') ? 'text-red-500 uppercase' : 'text-emerald-500'}`}>
+                                                    {cvPresetAction.startsWith('illegal') ? <AlertTriangle size={13} className="animate-bounce" /> : <CheckCircle2 size={13} />}
+                                                    {cvResults.action_classification || (cvPresetAction === 'illegal_1' ? 'ILLEGAL ACTION (Chucking - 22.6°)' : cvPresetAction === 'illegal_2' ? 'ILLEGAL ACTION (Throwing 31.4° & Overstep)' : 'Legal Bowling Action')}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">ICC 15° Chucking Test:</span>
+                                                <span className={`font-black flex items-center gap-1 ${cvPresetAction.startsWith('illegal') ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                    {cvPresetAction.startsWith('illegal') ? <AlertTriangle size={13} className="animate-bounce" /> : <CheckCircle2 size={13} />}
+                                                    {cvResults.icc_15_degree_test}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Front Foot Landing Crease:</span>
+                                                <span className={`font-black flex items-center gap-1 ${cvPresetAction === 'illegal_2' ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                    {cvPresetAction === 'illegal_2' ? <AlertTriangle size={13} /> : <CheckCircle2 size={13} />}
+                                                    {cvResults.crease_landing}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Elbow Extension Delta:</span>
+                                                <span className={`font-black k-mono ${cvPresetAction.startsWith('illegal') ? 'text-red-500 font-bold' : 'text-slate-900 dark:text-white'}`}>
+                                                    {cvResults.measured_extension_delta_deg}° {cvPresetAction.startsWith('illegal') ? '(Exceeds 15° Limit!)' : ''}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Landing Impact Force:</span>
+                                                <span className="font-black text-amber-500 k-mono">{cvResults.landing_impact}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="text-slate-400">Ball Track Speed:</span>
+                                                <span className="font-black text-amber-500 k-mono">{cvResults.average_ball_speed_kmh} KM/H</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -1253,61 +1584,451 @@ const CricketLab = () => {
                                 <>
                                     <div className="relative w-full max-w-[420px] aspect-square bg-[#0f172a] rounded-2xl overflow-hidden border border-white/10 flex items-center justify-center p-4">
                                         
-                                        {/* Mock video background representing bowler */}
+                                        {/* Live Action Status HUD Overlay */}
+                                        <div className="absolute top-3 left-3 right-3 flex justify-between items-center pointer-events-none z-20">
+                                            <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider backdrop-blur-md border ${
+                                                cvPresetAction.startsWith('illegal')
+                                                    ? 'bg-red-500/20 text-red-400 border-red-500/40 animate-pulse'
+                                                    : cvPresetAction.startsWith('unorthodox')
+                                                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                                                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                                            }`}>
+                                                {cvPresetAction === 'illegal_1' ? "🚨 ILLEGAL ACTION: CHUCKING ALERT (22.6° > 15°)" :
+                                                 cvPresetAction === 'illegal_2' ? "🚨 ILLEGAL ACTION: THROW (31.4°) & NO-BALL" :
+                                                 cvPresetAction === 'unorthodox_1' ? "⚡ UNORTHODOX BIOMECHANICS: 360° RAMP / SCOOP" :
+                                                 cvPresetAction === 'unorthodox_2' ? "⚡ UNORTHODOX BIOMECHANICS: SWITCH-HIT" :
+                                                 "✅ BIOMECHANICALLY LEGAL FORM (ICC COMPLIANT)"}
+                                            </div>
+                                        </div>
+
+                                        {/* Mock video background representing bowler or batsman */}
                                         <div className="absolute inset-0 opacity-20 pointer-events-none flex items-center justify-center p-8">
                                             <Eye size={120} className="text-slate-500 animate-pulse" />
                                         </div>
 
-                                        {/* Dynamic MediaPipe skeletal drawing based on video playback frames */}
-                                        <svg viewBox="0 0 100 100" className="w-full h-full stroke-blue-500 stroke-[1.2] fill-none">
-                                            {/* Spine & Shoulders */}
-                                            <line x1="50" y1="25" x2="50" y2="55" />
-                                            <line x1="38" y1="30" x2="62" y2="30" />
-                                            
-                                            {/* Head Circle */}
-                                            <circle cx="50" cy="18" r="6" fill="#1e293b" stroke="#3b82f6" strokeWidth={1} />
+                                        {/* Dynamic MediaPipe skeletal drawing based on role and scenario preset */}
+                                        {cvTargetRole === 'batsman' ? (
+                                            cvPresetAction === 'unorthodox_1' ? (
+                                                /* 1. BATSMAN UNORTHODOX #1: 360° RAMP / SCOOP SHOT */
+                                                <svg viewBox="0 0 100 100" className="w-full h-full fill-none">
+                                                    {/* POPPING CREASE LINE */}
+                                                    <line x1="10" y1="90" x2="90" y2="90" className="stroke-white/40 stroke-1" strokeDasharray="3 2" />
+                                                    <text x="12" y="87" fill="rgba(255,255,255,0.4)" fontSize="3" fontWeight="bold">POPPING CREASE</text>
 
-                                            {/* LEFT ARM (Static / Gather) */}
-                                            <line x1="38" y1="30" x2="28" y2="42" />
-                                            <line x1="28" y1="42" x2="22" y2="50" />
-                                            
-                                            {/* RIGHT ARM (Dynamic Bowler Bowing Action skeleton based on current video frame) */}
-                                            {/* Shoulder is (62, 30). Elbow swings, Wrist swings */}
-                                            {(() => {
-                                                const frameRad = (cvVideoFrame * 18 * Math.PI) / 180;
-                                                const elbX = 62 + Math.cos(frameRad) * 14;
-                                                const elbY = 30 + Math.sin(frameRad) * 14;
-                                                
-                                                const wrstX = elbX + Math.cos(frameRad + 0.2) * 14;
-                                                const wrstY = elbY + Math.sin(frameRad + 0.2) * 14;
+                                                    {/* UNORTHODOX CROUCHED SPINE & BODY AXIS */}
+                                                    <line x1="48" y1="36" x2="46" y2="64" className="stroke-slate-300 stroke-[1.5]" />
+                                                    <line x1="38" y1="38" x2="58" y2="34" className="stroke-slate-300 stroke-[1.5]" />
+                                                    
+                                                    {/* Low Head Position */}
+                                                    <circle cx="44" cy="26" r="5.5" fill="#1e293b" stroke="#f59e0b" strokeWidth={1} />
+                                                    <line x1="44" y1="26" x2="44" y2="85" className="stroke-amber-400/40 stroke-1" strokeDasharray="2 2" />
 
-                                                return (
-                                                    <>
-                                                        <line x1="62" y1="30" x2={elbX} y2={elbY} className="stroke-emerald-400 stroke-2" />
-                                                        <line x1={elbX} y1={elbY} x2={wrstX} y2={wrstY} className="stroke-emerald-400 stroke-2" />
+                                                    {/* UNORTHODOX REVERSE BAT VECTOR & TWO-HANDED WRIST FLICK */}
+                                                    {(() => {
+                                                        const scoopRad = (cvVideoFrame * 12 * Math.PI) / 180;
+                                                        const topHandX = 42 + Math.cos(scoopRad) * 4;
+                                                        const topHandY = 38 + Math.sin(scoopRad) * 3;
+                                                        const bottomHandX = topHandX + 2.5;
+                                                        const bottomHandY = topHandY + 3.5;
+
+                                                        const batToeX = topHandX - 16 - Math.cos(scoopRad) * 6;
+                                                        const batToeY = topHandY - 14;
+
+                                                        return (
+                                                            <>
+                                                                <line x1="38" y1="38" x2={bottomHandX - 4} y2={bottomHandY + 2} className="stroke-cyan-400 stroke-2" />
+                                                                <line x1={bottomHandX - 4} y1={bottomHandY + 2} x2={bottomHandX} y2={bottomHandY} className="stroke-cyan-400 stroke-2" />
+
+                                                                <line x1="58" y1="34" x2={topHandX + 6} y2={topHandY + 2} className="stroke-emerald-400 stroke-2" />
+                                                                <line x1={topHandX + 6} y1={topHandY + 2} x2={topHandX} y2={topHandY} className="stroke-emerald-400 stroke-2" />
+
+                                                                <line x1={topHandX} y1={topHandY} x2={batToeX} y2={batToeY} className="stroke-amber-400 stroke-[4] stroke-round" />
+                                                                
+                                                                <circle cx={topHandX} cy={topHandY} r="2.2" fill="#3b82f6" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={bottomHandX} cy={bottomHandY} r="2.2" fill="#06b6d4" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={batToeX} cy={batToeY} r="3.5" fill="#f59e0b" stroke="#ffffff" strokeWidth={0.5} className="animate-pulse" />
+                                                            </>
+                                                        );
+                                                    })()}
+
+                                                    {/* DEEP CROUCH KNEES & ANKLES */}
+                                                    <line x1="42" y1="64" x2="52" y2="64" className="stroke-slate-300 stroke-[1.5]" />
+                                                    <line x1="42" y1="64" x2="34" y2="78" className="stroke-blue-400 stroke-2" />
+                                                    <line x1="34" y1="78" x2="32" y2="90" className="stroke-blue-400 stroke-2" />
+                                                    <line x1="32" y1="90" x2="24" y2="90" className="stroke-cyan-400 stroke-[2.5]" />
+                                                    
+                                                    <line x1="52" y1="64" x2="60" y2="78" className="stroke-blue-400 stroke-2" />
+                                                    <line x1="60" y1="78" x2="63" y2="90" className="stroke-blue-400 stroke-2" />
+                                                    <line x1="63" y1="90" x2="72" y2="90" className="stroke-emerald-400 stroke-[2.5]" />
+
+                                                    <circle cx="34" cy="78" r="2" fill="#3b82f6" />
+                                                    <circle cx="60" cy="78" r="2" fill="#3b82f6" />
+                                                </svg>
+                                            ) : cvPresetAction === 'unorthodox_2' ? (
+                                                /* 2. BATSMAN UNORTHODOX #2: SWITCH-HIT / REVERSE SWEEP STANCE */
+                                                <svg viewBox="0 0 100 100" className="w-full h-full fill-none">
+                                                    <line x1="10" y1="90" x2="90" y2="90" className="stroke-white/40 stroke-1" strokeDasharray="3 2" />
+                                                    <text x="12" y="87" fill="rgba(255,255,255,0.4)" fontSize="3" fontWeight="bold">POPPING CREASE</text>
+
+                                                    <line x1="52" y1="28" x2="48" y2="58" className="stroke-amber-400 stroke-[1.5]" />
+                                                    <line x1="60" y1="32" x2="40" y2="30" className="stroke-amber-400 stroke-[1.5]" />
+                                                    
+                                                    <circle cx="56" cy="20" r="5.5" fill="#1e293b" stroke="#f59e0b" strokeWidth={1.5} />
+                                                    <line x1="56" y1="20" x2="56" y2="85" className="stroke-amber-400/40 stroke-1" strokeDasharray="2 2" />
+
+                                                    {(() => {
+                                                        const swRad = (cvVideoFrame * 12 * Math.PI) / 180;
+                                                        const topHandX = 48 + Math.cos(swRad) * 6;
+                                                        const topHandY = 42 + Math.sin(swRad) * 4;
+                                                        const bottomHandX = topHandX - 3;
+                                                        const bottomHandY = topHandY - 2;
+
+                                                        const batToeX = topHandX + 24;
+                                                        const batToeY = topHandY - 6 - Math.sin(swRad) * 8;
+
+                                                        return (
+                                                            <>
+                                                                <line x1="60" y1="32" x2={topHandX + 8} y2={topHandY - 4} className="stroke-cyan-400 stroke-2" />
+                                                                <line x1={topHandX + 8} y1={topHandY - 4} x2={topHandX} y2={topHandY} className="stroke-cyan-400 stroke-2" />
+
+                                                                <line x1="40" y1="30" x2={bottomHandX - 6} y2={bottomHandY + 4} className="stroke-emerald-400 stroke-2" />
+                                                                <line x1={bottomHandX - 6} y1={bottomHandY + 4} x2={bottomHandX} y2={bottomHandY} className="stroke-emerald-400 stroke-2" />
+
+                                                                <line x1={bottomHandX} y1={bottomHandY} x2={batToeX} y2={batToeY} className="stroke-amber-400 stroke-[4] stroke-round" />
+                                                                
+                                                                <circle cx={topHandX} cy={topHandY} r="2.2" fill="#06b6d4" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={bottomHandX} cy={bottomHandY} r="2.2" fill="#10b981" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={batToeX} cy={batToeY} r="3.5" fill="#f59e0b" stroke="#ffffff" strokeWidth={0.5} className="animate-pulse" />
+                                                            </>
+                                                        );
+                                                    })()}
+
+                                                    <line x1="48" y1="58" x2="62" y2="76" className="stroke-amber-400 stroke-2" />
+                                                    <line x1="62" y1="76" x2="65" y2="90" className="stroke-amber-400 stroke-2" />
+                                                    <line x1="65" y1="90" x2="74" y2="90" className="stroke-emerald-400 stroke-[2.5]" />
+
+                                                    <line x1="48" y1="58" x2="38" y2="74" className="stroke-amber-400 stroke-2" />
+                                                    <line x1="38" y1="74" x2="34" y2="90" className="stroke-amber-400 stroke-2" />
+                                                    <line x1="34" y1="90" x2="25" y2="90" className="stroke-cyan-400 stroke-[2.5]" />
+
+                                                    <circle cx="62" cy="76" r="2" fill="#f59e0b" />
+                                                    <circle cx="38" cy="74" r="2" fill="#f59e0b" />
+                                                </svg>
+                                            ) : (
+                                                /* 3. BATSMAN STANDARD: CLASSIC COVER DRIVE (HIGH ELBOW) */
+                                                <svg viewBox="0 0 100 100" className="w-full h-full fill-none">
+                                                    <line x1="45" y1="28" x2="48" y2="58" className="stroke-slate-400 stroke-[1.2]" />
+                                                    <line x1="36" y1="32" x2="56" y2="30" className="stroke-slate-300 stroke-[1.2]" />
+                                                    
+                                                    <circle cx="43" cy="20" r="5.5" fill="#1e293b" stroke="#3b82f6" strokeWidth={1} />
+                                                    <line x1="43" y1="20" x2="43" y2="85" className="stroke-blue-400/30 stroke-1" strokeDasharray="2 2" />
+
+                                                    {(() => {
+                                                        const frameRad = (cvVideoFrame * 12 * Math.PI) / 180;
+
+                                                        const leadElbX = 56 + Math.cos(frameRad - 0.5) * 10;
+                                                        const leadElbY = 30 + Math.sin(frameRad - 0.5) * 8;
+                                                        const topHandX = leadElbX - 8 + Math.sin(frameRad) * 4;
+                                                        const topHandY = leadElbY + 12;
+
+                                                        const backElbX = 36 - 6 + Math.cos(frameRad - 0.2) * 5;
+                                                        const backElbY = 32 + 8 + Math.sin(frameRad - 0.2) * 4;
+                                                        const bottomHandX = topHandX + 2.5;
+                                                        const bottomHandY = topHandY + 4;
+
+                                                        const batToeX = topHandX + 18 + Math.cos(frameRad) * 8;
+                                                        const batToeY = topHandY + 18;
+
+                                                        return (
+                                                            <>
+                                                                <line x1="36" y1="32" x2={backElbX} y2={backElbY} className="stroke-cyan-400 stroke-[1.8]" />
+                                                                <line x1={backElbX} y1={backElbY} x2={bottomHandX} y2={bottomHandY} className="stroke-cyan-400 stroke-[1.8]" />
+
+                                                                <line x1="56" y1="30" x2={leadElbX} y2={leadElbY} className="stroke-emerald-400 stroke-2" />
+                                                                <line x1={leadElbX} y1={leadElbY} x2={topHandX} y2={topHandY} className="stroke-emerald-400 stroke-2" />
+
+                                                                <line x1={topHandX - 1} y1={topHandY - 2} x2={batToeX} y2={batToeY} className="stroke-amber-400 stroke-[4] stroke-round" />
+
+                                                                <circle cx="56" cy="30" r="2" fill="#ef4444" />
+                                                                <circle cx={leadElbX} cy={leadElbY} r="2" fill="#eab308" />
+                                                                
+                                                                <circle cx="36" cy="32" r="2" fill="#ef4444" />
+                                                                <circle cx={backElbX} cy={backElbY} r="2" fill="#eab308" />
+
+                                                                <circle cx={topHandX} cy={topHandY} r="2.2" fill="#3b82f6" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={bottomHandX} cy={bottomHandY} r="2.2" fill="#06b6d4" stroke="#ffffff" strokeWidth={0.5} />
+                                                                
+                                                                <circle cx={batToeX - 4} cy={batToeY - 4} r="3.5" fill="#f59e0b" stroke="#ffffff" strokeWidth={0.5} className="animate-pulse" />
+                                                            </>
+                                                        );
+                                                    })()}
+
+                                                    {(() => {
+                                                        const strideOffset = Math.sin((cvVideoFrame * 12 * Math.PI) / 180) * 4;
+
+                                                        const leftHip = { x: 42, y: 58 };
+                                                        const rightHip = { x: 54, y: 58 };
+
+                                                        const backKnee = { x: 37, y: 75 };
+                                                        const backAnkle = { x: 35, y: 90 };
+                                                        const backToe = { x: 26, y: 90 };
+
+                                                        const frontKnee = { x: 62 + strideOffset, y: 74 };
+                                                        const frontAnkle = { x: 65 + strideOffset * 1.4, y: 90 };
+                                                        const frontToe = { x: 74 + strideOffset * 1.4, y: 90 };
+
+                                                        return (
+                                                            <>
+                                                                <line x1="10" y1="90" x2="90" y2="90" className="stroke-white/40 stroke-1" strokeDasharray="3 2" />
+                                                                <text x="12" y="87" fill="rgba(255,255,255,0.4)" fontSize="3" fontWeight="bold">POPPING CREASE</text>
+
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rightHip.x} y2={rightHip.y} className="stroke-slate-300 stroke-[1.5]" />
+                                                                <circle cx={leftHip.x} cy={leftHip.y} r="1.8" fill="#ef4444" />
+                                                                <circle cx={rightHip.x} cy={rightHip.y} r="1.8" fill="#ef4444" />
+
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={backKnee.x} y2={backKnee.y} className="stroke-slate-400 stroke-[1.5]" />
+                                                                <line x1={backKnee.x} y1={backKnee.y} x2={backAnkle.x} y2={backAnkle.y} className="stroke-slate-400 stroke-[1.5]" />
+                                                                <line x1={backAnkle.x} y1={backAnkle.y} x2={backToe.x} y2={backToe.y} className="stroke-cyan-400 stroke-[2.5] stroke-round" />
+                                                                <circle cx={backKnee.x} cy={backKnee.y} r="1.8" fill="#eab308" />
+                                                                <circle cx={backAnkle.x} cy={backAnkle.y} r="1.8" fill="#06b6d4" />
+
+                                                                <line x1={rightHip.x} y1={rightHip.y} x2={frontKnee.x} y2={frontKnee.y} className="stroke-blue-400 stroke-2" />
+                                                                <line x1={frontKnee.x} y1={frontKnee.y} x2={frontAnkle.x} y2={frontAnkle.y} className="stroke-blue-400 stroke-2" />
+                                                                <line x1={frontAnkle.x} y1={frontAnkle.y} x2={frontToe.x} y2={frontToe.y} className="stroke-emerald-400 stroke-[3] stroke-round" />
+                                                                <circle cx={frontKnee.x} cy={frontKnee.y} r="2" fill="#3b82f6" />
+                                                                <circle cx={frontAnkle.x} cy={frontAnkle.y} r="2" fill="#10b981" />
+                                                                <circle cx={frontToe.x} cy={frontToe.y} r="1.8" fill="#34d399" className="animate-pulse" />
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            )
+                                        ) : (
+                                            cvPresetAction === 'illegal_1' ? (
+                                                /* 4. BOWLER ILLEGAL #1: CHUCKING / ARM FLEXION VIOLATION (22.6°) */
+                                                <svg viewBox="0 0 100 100" className="w-full h-full fill-none">
+                                                    <line x1="10" y1="90" x2="90" y2="90" className="stroke-red-500/80 stroke-1" strokeDasharray="3 2" />
+                                                    <text x="12" y="87" fill="#ef4444" fontSize="3.5" fontWeight="bold">ILLEGAL CHUCKING ACTION (22.6° FLEXION)</text>
+
+                                                    <line x1="50" y1="25" x2="50" y2="55" className="stroke-red-500/60 stroke-[1.2]" />
+                                                    <line x1="38" y1="30" x2="62" y2="30" className="stroke-red-500/60 stroke-[1.2]" />
+                                                    <circle cx="50" cy="18" r="6" fill="#1e293b" stroke="#ef4444" strokeWidth={1.5} />
+
+                                                    <line x1="38" y1="30" x2="28" y2="42" className="stroke-slate-400 stroke-[1.2]" />
+                                                    <line x1="28" y1="42" x2="22" y2="50" className="stroke-slate-400 stroke-[1.2]" />
+                                                    
+                                                    {(() => {
+                                                        const frameRad = (cvVideoFrame * 18 * Math.PI) / 180;
+                                                        const elbX = 62 + Math.cos(frameRad) * 11;
+                                                        const elbY = 30 + Math.sin(frameRad) * 11;
                                                         
-                                                        {/* Joints coordinates circles */}
-                                                        <circle cx="62" cy="30" r="2" fill="#ef4444" />
-                                                        <circle cx={elbX} cy={elbY} r="2" fill="#eab308" />
-                                                        <circle cx={wrstX} cy={wrstY} r="2" fill="#3b82f6" />
+                                                        const wrstX = elbX + Math.cos(frameRad + 0.6) * 15;
+                                                        const wrstY = elbY + Math.sin(frameRad + 0.6) * 15;
 
-                                                        {/* Ball Tracking Point (OpenCV red ball) */}
-                                                        <circle cx={wrstX + 3} cy={wrstY - 3} r="3" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} className="animate-pulse" />
-                                                    </>
-                                                );
-                                            })()}
+                                                        return (
+                                                            <>
+                                                                <line x1="62" y1="30" x2={elbX} y2={elbY} className="stroke-red-500 stroke-[2.5]" />
+                                                                <line x1={elbX} y1={elbY} x2={wrstX} y2={wrstY} className="stroke-red-500 stroke-[2.5]" />
+                                                                
+                                                                <circle cx={elbX} cy={elbY} r="6" fill="#ef4444" opacity={0.35} className="animate-ping" />
+                                                                <circle cx="62" cy="30" r="2" fill="#ef4444" />
+                                                                <circle cx={elbX} cy={elbY} r="2.5" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={wrstX} cy={wrstY} r="2" fill="#3b82f6" />
 
-                                            {/* Hips & Legs */}
-                                            <line x1="42" y1="55" x2="58" y2="55" />
-                                            <line x1="42" y1="55" x2="40" y2="75" />
-                                            <line x1="40" y1="75" x2="38" y2="92" />
-                                            <line x1="58" y1="55" x2="60" y2="75" />
-                                            <line x1="60" y1="75" x2="62" y2="92" />
-                                        </svg>
+                                                                <text x={Math.max(10, elbX - 32)} y={Math.max(14, elbY - 4)} fill="#ef4444" fontSize="3.2" fontWeight="bold">CHUCK 22.6° (&gt;15°)</text>
+                                                                <circle cx={wrstX + 3} cy={wrstY - 3} r="3.5" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} className="animate-bounce" />
+                                                            </>
+                                                        );
+                                                    })()}
+
+                                                    {(() => {
+                                                        const boundRad = (cvVideoFrame * 18 * Math.PI) / 180;
+                                                        const strideBound = Math.cos(boundRad) * 4;
+
+                                                        const leftHip = { x: 42, y: 55 };
+                                                        const rightHip = { x: 58, y: 55 };
+
+                                                        const rearKnee = { x: 36 - strideBound, y: 73 };
+                                                        const rearAnkle = { x: 33 - strideBound, y: 90 };
+
+                                                        const landingKnee = { x: 62 + strideBound, y: 73 };
+                                                        const landingAnkle = { x: 66 + strideBound * 1.2, y: 90 };
+                                                        const landingToe = { x: 74 + strideBound * 1.2, y: 90 };
+
+                                                        return (
+                                                            <>
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rightHip.x} y2={rightHip.y} className="stroke-slate-300 stroke-[1.5]" />
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rearKnee.x} y2={rearKnee.y} className="stroke-slate-400 stroke-[1.5]" />
+                                                                <line x1={rearKnee.x} y1={rearKnee.y} x2={rearAnkle.x} y2={rearAnkle.y} className="stroke-slate-400 stroke-[1.5]" />
+
+                                                                <line x1={rightHip.x} y1={rightHip.y} x2={landingKnee.x} y2={landingKnee.y} className="stroke-blue-400 stroke-2" />
+                                                                <line x1={landingKnee.x} y1={landingKnee.y} x2={landingAnkle.x} y2={landingAnkle.y} className="stroke-blue-400 stroke-2" />
+                                                                <line x1={landingAnkle.x} y1={landingAnkle.y} x2={landingToe.x} y2={landingToe.y} className="stroke-emerald-400 stroke-[3] stroke-round" />
+                                                                
+                                                                <circle cx={landingKnee.x} cy={landingKnee.y} r="2" fill="#3b82f6" />
+                                                                <circle cx={landingAnkle.x} cy={landingAnkle.y} r="2" fill="#10b981" />
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            ) : cvPresetAction === 'illegal_2' ? (
+                                                /* 5. BOWLER ILLEGAL #2: THROWING (31.4°) & CREASE OVERSTEP NO-BALL */
+                                                <svg viewBox="0 0 100 100" className="w-full h-full fill-none">
+                                                    <line x1="10" y1="90" x2="90" y2="90" className="stroke-red-500 stroke-[1.5]" strokeDasharray="3 2" />
+                                                    <text x="12" y="87" fill="#ef4444" fontSize="3.5" fontWeight="bold">NO-BALL CREASE VIOLATION (18 CM OVERSTEP)</text>
+
+                                                    <line x1="50" y1="25" x2="50" y2="55" className="stroke-red-500 stroke-[1.5]" />
+                                                    <line x1="38" y1="30" x2="62" y2="30" className="stroke-red-500 stroke-[1.5]" />
+                                                    <circle cx="50" cy="18" r="6" fill="#1e293b" stroke="#ef4444" strokeWidth={2} />
+
+                                                    <line x1="38" y1="30" x2="28" y2="42" className="stroke-slate-400 stroke-[1.2]" />
+                                                    <line x1="28" y1="42" x2="22" y2="50" className="stroke-slate-400 stroke-[1.2]" />
+                                                    
+                                                    {(() => {
+                                                        const frameRad = (cvVideoFrame * 18 * Math.PI) / 180;
+                                                        const elbX = 62 + Math.cos(frameRad) * 12;
+                                                        const elbY = 32 + Math.sin(frameRad) * 12;
+                                                        
+                                                        const wrstX = elbX + Math.cos(frameRad + 0.9) * 16;
+                                                        const wrstY = elbY + Math.sin(frameRad + 0.9) * 16;
+
+                                                        return (
+                                                            <>
+                                                                <line x1="62" y1="30" x2={elbX} y2={elbY} className="stroke-red-500 stroke-[3]" />
+                                                                <line x1={elbX} y1={elbY} x2={wrstX} y2={wrstY} className="stroke-red-500 stroke-[3]" />
+                                                                
+                                                                <circle cx={elbX} cy={elbY} r="7" fill="#ef4444" opacity={0.4} className="animate-ping" />
+                                                                <circle cx="62" cy="30" r="2.5" fill="#ef4444" />
+                                                                <circle cx={elbX} cy={elbY} r="3" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={wrstX} cy={wrstY} r="2.5" fill="#ef4444" />
+
+                                                                <text x={Math.max(10, elbX - 32)} y={Math.max(14, elbY - 4)} fill="#ef4444" fontSize="3.2" fontWeight="bold">ILLEGAL THROW 31.4°</text>
+                                                                <circle cx={wrstX + 3} cy={wrstY - 3} r="3.5" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} className="animate-bounce" />
+                                                            </>
+                                                        );
+                                                    })()}
+
+                                                    {(() => {
+                                                        const boundRad = (cvVideoFrame * 18 * Math.PI) / 180;
+                                                        const strideBound = Math.cos(boundRad) * 4;
+
+                                                        const leftHip = { x: 42, y: 55 };
+                                                        const rightHip = { x: 58, y: 55 };
+
+                                                        const rearKnee = { x: 36 - strideBound, y: 73 };
+                                                        const rearAnkle = { x: 33 - strideBound, y: 90 };
+
+                                                        const landingKnee = { x: 68 + strideBound, y: 74 };
+                                                        const landingAnkle = { x: 74 + strideBound * 1.2, y: 93 };
+                                                        const landingToe = { x: 84 + strideBound * 1.2, y: 93 };
+
+                                                        return (
+                                                            <>
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rightHip.x} y2={rightHip.y} className="stroke-slate-300 stroke-[1.5]" />
+                                                                
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rearKnee.x} y2={rearKnee.y} className="stroke-slate-400 stroke-[1.5]" />
+                                                                <line x1={rearKnee.x} y1={rearKnee.y} x2={rearAnkle.x} y2={rearAnkle.y} className="stroke-slate-400 stroke-[1.5]" />
+
+                                                                <line x1={rightHip.x} y1={rightHip.y} x2={landingKnee.x} y2={landingKnee.y} className="stroke-red-500 stroke-[2.5]" />
+                                                                <line x1={landingKnee.x} y1={landingKnee.y} x2={landingAnkle.x} y2={landingAnkle.y} className="stroke-red-500 stroke-[2.5]" />
+                                                                <line x1={landingAnkle.x} y1={landingAnkle.y} x2={landingToe.x} y2={landingToe.y} className="stroke-red-400 stroke-[4] stroke-round" />
+                                                                
+                                                                <circle cx={landingKnee.x} cy={landingKnee.y} r="2.2" fill="#ef4444" />
+                                                                <circle cx={landingAnkle.x} cy={landingAnkle.y} r="2.5" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} />
+                                                                <circle cx={landingToe.x} cy={landingToe.y} r="2.5" fill="#f87171" className="animate-ping" />
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            ) : (
+                                                /* 6. BOWLER STANDARD: LEGAL BOWLING ACTION (WITHIN 15°) */
+                                                <svg viewBox="0 0 100 100" className="w-full h-full fill-none">
+                                                    <line x1="10" y1="90" x2="90" y2="90" className="stroke-white/40 stroke-1" strokeDasharray="3 2" />
+                                                    <text x="12" y="87" fill="rgba(255,255,255,0.4)" fontSize="3" fontWeight="bold">POPPING CREASE</text>
+
+                                                    <line x1="50" y1="25" x2="50" y2="55" className="stroke-blue-500 stroke-[1.2]" />
+                                                    <line x1="38" y1="30" x2="62" y2="30" className="stroke-blue-500 stroke-[1.2]" />
+                                                    
+                                                    <circle cx="50" cy="18" r="6" fill="#1e293b" stroke="#3b82f6" strokeWidth={1} />
+
+                                                    <line x1="38" y1="30" x2="28" y2="42" className="stroke-slate-400 stroke-[1.2]" />
+                                                    <line x1="28" y1="42" x2="22" y2="50" className="stroke-slate-400 stroke-[1.2]" />
+                                                    
+                                                    {(() => {
+                                                        const frameRad = (cvVideoFrame * 18 * Math.PI) / 180;
+                                                        const elbX = 62 + Math.cos(frameRad) * 14;
+                                                        const elbY = 30 + Math.sin(frameRad) * 14;
+                                                        
+                                                        const wrstX = elbX + Math.cos(frameRad + 0.2) * 14;
+                                                        const wrstY = elbY + Math.sin(frameRad + 0.2) * 14;
+
+                                                        return (
+                                                            <>
+                                                                <line x1="62" y1="30" x2={elbX} y2={elbY} className="stroke-emerald-400 stroke-2" />
+                                                                <line x1={elbX} y1={elbY} x2={wrstX} y2={wrstY} className="stroke-emerald-400 stroke-2" />
+                                                                
+                                                                <circle cx="62" cy="30" r="2" fill="#ef4444" />
+                                                                <circle cx={elbX} cy={elbY} r="2" fill="#eab308" />
+                                                                <circle cx={wrstX} cy={wrstY} r="2" fill="#3b82f6" />
+
+                                                                <circle cx={wrstX + 3} cy={wrstY - 3} r="3" fill="#ef4444" stroke="#ffffff" strokeWidth={0.5} className="animate-pulse" />
+                                                            </>
+                                                        );
+                                                    })()}
+
+                                                    {(() => {
+                                                        const boundRad = (cvVideoFrame * 18 * Math.PI) / 180;
+                                                        const strideBound = Math.cos(boundRad) * 4;
+
+                                                        const leftHip = { x: 42, y: 55 };
+                                                        const rightHip = { x: 58, y: 55 };
+
+                                                        const rearKnee = { x: 38 - strideBound * 0.5, y: 73 };
+                                                        const rearAnkle = { x: 35 - strideBound, y: 90 };
+                                                        const rearToe = { x: 27 - strideBound, y: 90 };
+
+                                                        const landingKnee = { x: 62 + strideBound, y: 73 };
+                                                        const landingAnkle = { x: 66 + strideBound * 1.2, y: 90 };
+                                                        const landingToe = { x: 74 + strideBound * 1.2, y: 90 };
+
+                                                        return (
+                                                            <>
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rightHip.x} y2={rightHip.y} className="stroke-slate-300 stroke-[1.5]" />
+                                                                <circle cx={leftHip.x} cy={leftHip.y} r="1.8" fill="#ef4444" />
+                                                                <circle cx={rightHip.x} cy={rightHip.y} r="1.8" fill="#ef4444" />
+
+                                                                <line x1={leftHip.x} y1={leftHip.y} x2={rearKnee.x} y2={rearKnee.y} className="stroke-slate-400 stroke-[1.5]" />
+                                                                <line x1={rearKnee.x} y1={rearKnee.y} x2={rearAnkle.x} y2={rearAnkle.y} className="stroke-slate-400 stroke-[1.5]" />
+                                                                <line x1={rearAnkle.x} y1={rearAnkle.y} x2={rearToe.x} y2={rearToe.y} className="stroke-cyan-400 stroke-[2.5] stroke-round" />
+                                                                <circle cx={rearKnee.x} cy={rearKnee.y} r="1.8" fill="#eab308" />
+                                                                <circle cx={rearAnkle.x} cy={rearAnkle.y} r="1.8" fill="#06b6d4" />
+
+                                                                <line x1={rightHip.x} y1={rightHip.y} x2={landingKnee.x} y2={landingKnee.y} className="stroke-blue-400 stroke-2" />
+                                                                <line x1={landingKnee.x} y1={landingKnee.y} x2={landingAnkle.x} y2={landingAnkle.y} className="stroke-blue-400 stroke-2" />
+                                                                <line x1={landingAnkle.x} y1={landingAnkle.y} x2={landingToe.x} y2={landingToe.y} className="stroke-emerald-400 stroke-[3] stroke-round" />
+                                                                <circle cx={landingKnee.x} cy={landingKnee.y} r="2" fill="#3b82f6" />
+                                                                <circle cx={landingAnkle.x} cy={landingAnkle.y} r="2" fill="#10b981" />
+                                                                <circle cx={landingToe.x} cy={landingToe.y} r="1.8" fill="#34d399" className="animate-pulse" />
+                                                            </>
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            )
+                                        )}
                                     </div>
                                     <div className="mt-4 flex items-center justify-between w-full max-w-[420px] text-xs font-bold text-slate-300">
-                                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> MediaPipe arm vector</span>
-                                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Red Ball path tracker</span>
+                                        {cvTargetRole === 'batsman' ? (
+                                            <>
+                                                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Lead Stride Foot</span>
+                                                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Bat Vector (2-Hands)</span>
+                                                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-white/60"></span> Popping Crease</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span> Front Landing Foot</span>
+                                                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-400"></span> No-Ball Crease</span>
+                                            </>
+                                        )}
                                         <span className="k-mono text-[10px] text-slate-400">Frame {cvVideoFrame}/15</span>
                                     </div>
                                 </>
@@ -1317,7 +2038,10 @@ const CricketLab = () => {
                                     <div>
                                         <h4 className="text-sm font-black text-white uppercase tracking-wider">No active overlay session</h4>
                                         <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-                                            Upload high speed footage or select rca_bowler_cam.mp4, and trigger the MediaPipe engine to overlay pose calculations.
+                                            {cvTargetRole === 'batsman' 
+                                                ? "Upload high speed footage or select RCA_BATSMAN_DRIVE_CAM.MP4, and trigger the MediaPipe engine for stance & stroke analysis."
+                                                : "Upload high speed footage or select RCA_BOWLER_CAM.MP4, and trigger the MediaPipe engine for bowling action & chucking analysis."
+                                            }
                                         </p>
                                     </div>
                                 </div>

@@ -18,7 +18,7 @@ const formatStatSchema = new mongoose.Schema({
 
 const playerSchema = new mongoose.Schema({
   // Basic Public Data (Cricbuzz RapidAPI)
-  playerId: { type: String, unique: true }, // From RapidAPI
+  playerId: { type: String, unique: true, sparse: true }, // From RapidAPI
   name: { type: String, required: true },
   sport: { type: String, default: 'Cricket' },
   teamId: { type: Number }, // Link to Team schema

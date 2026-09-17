@@ -49,6 +49,18 @@ const DashboardAnalyst = () => {
     const [canvasSubTab, setCanvasSubTab] = useState('wheel'); // wheel, pitch
     const [showDebugLogger, setShowDebugLogger] = useState(false);
 
+    // Live Injury Telemetry & ML Predictor states
+    const [liveTelemetry, setLiveTelemetry] = useState([]);
+    const [mlParams, setMlParams] = useState({
+        workload: 0.75,
+        acwr: 1.35,
+        restDays: 2,
+        historyIndex: 0.3,
+        fatigue: 0.55
+    });
+    const [mlResult, setMlResult] = useState(null);
+    const [mlLoading, setMlLoading] = useState(false);
+
     // CV / Post-Match states
     const [cvProcessing, setCvProcessing] = useState(false);
     const [cvResults, setCvResults] = useState(null);
@@ -58,6 +70,7 @@ const DashboardAnalyst = () => {
     // Socket states
     const [socketConnected, setSocketConnected] = useState(false);
     const [liveLogs, setLiveLogs] = useState(["Websocket: Initialization started..."]);
+
 
     const heatmapCanvasRef = useRef(null);
     const socketRef = useRef(null);
@@ -154,6 +167,28 @@ const DashboardAnalyst = () => {
             setLiveLogs(prev => [...prev, "Websocket: Connection closed."]);
         });
 
+        // Listen for live injury telemetry
+        socketRef.current.on('liveInjuryRiskUpdate', (data) => {
+            if (Array.isArray(data) && data.length > 0) {
+                setLiveTelemetry(data);
+            }
+        });
+
+        // Fetch initial telemetry via REST fallback
+        const fetchInitialTelemetry = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const API_BASE = process.env.REACT_APP_API_URL || '/api';
+                const res = await fetch(`${API_BASE}/injury-intelligence/live-telemetry`, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) setLiveTelemetry(data);
+                }
+            } catch (err) { }
+        };
+        fetchInitialTelemetry();
+
         socketRef.current.on('deliveryUpdate', (data) => {
             setLiveLogs(prev => [
                 ...prev,
@@ -162,6 +197,7 @@ const DashboardAnalyst = () => {
             setDeliveries(prev => [...prev, data.newDelivery]);
             setMatch(prev => ({ ...prev, stats: data.stats }));
         });
+
 
         return () => {
             if (socketRef.current) {
@@ -296,6 +332,31 @@ const DashboardAnalyst = () => {
         return false;
     });
 
+    const runMLInjuryPrediction = async () => {
+        setMlLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const headers = { 
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+            const API_BASE = process.env.REACT_APP_API_URL || '/api';
+            const res = await fetch(`${API_BASE}/injury-intelligence/ml-predict`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(mlParams)
+            });
+            const data = await res.json();
+            if (data && data.data) {
+                setMlResult(data.data);
+            }
+        } catch (err) {
+            console.error("ML injury prediction error:", err);
+        } finally {
+            setMlLoading(false);
+        }
+    };
+
     if (loading || !match) return (
         <div className="flex flex-col justify-center items-center h-96 space-y-4">
             <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
@@ -340,8 +401,10 @@ const DashboardAnalyst = () => {
                 {[
                     { id: 'pre-match', label: 'Before Match (Pre-Match Analysis)', icon: <Filter size={13} /> },
                     { id: 'live-match', label: 'During Match (Live Insights)', icon: <Activity size={13} /> },
+                    { id: 'injury-ml-studio', label: 'Live Injury Risk & ML Predictor Studio', icon: <Cpu size={13} /> },
                     { id: 'post-match', label: 'After Match (Post-Match)', icon: <FileText size={13} /> }
                 ].map(tab => (
+
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
@@ -766,9 +829,218 @@ const DashboardAnalyst = () => {
 
                     </div>
                 )}
+                {/* 4. LIVE INJURY RISK & ML PREDICTOR STUDIO TAB */}
+                {activeTab === 'injury-ml-studio' && (
+                    <div className="space-y-6">
+                        
+                        {/* Live Telemetry Radar Header */}
+                        <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-6">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                                <div>
+                                    <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest block mb-1">REAL-TIME TELEMETRY ENGINE</span>
+                                    <h3 className="text-base font-black text-slate-900 dark:text-white">Live Match Player Biometrics & ACWR Telemetry</h3>
+                                </div>
+                                <span className="px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> Live Socket Telemetry Sync
+                                </span>
+                            </div>
+
+                            {/* Telemetry Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                {(liveTelemetry.length > 0 ? liveTelemetry : [
+                                    { playerId: 'ind-1', playerName: 'Virat Kohli', role: 'Batter', heartRate: 142, speedKmH: 24.2, acwr: 1.25, fatigueIndex: 0.38, riskScore: 18.5, riskLevel: 'LOW', availabilityStatus: 'Ready' },
+                                    { playerId: 'ind-2', playerName: 'Rohit Sharma', role: 'Batter', heartRate: 138, speedKmH: 21.0, acwr: 1.30, fatigueIndex: 0.45, riskScore: 36.2, riskLevel: 'MEDIUM', availabilityStatus: 'Limited' },
+                                    { playerId: 'ind-3', playerName: 'Jasprit Bumrah', role: 'Bowler', heartRate: 165, speedKmH: 28.4, acwr: 1.62, fatigueIndex: 0.72, riskScore: 78.4, riskLevel: 'HIGH', availabilityStatus: 'Unavailable' },
+                                    { playerId: 'ind-4', playerName: 'Hardik Pandya', role: 'All Rounder', heartRate: 155, speedKmH: 26.1, acwr: 1.48, fatigueIndex: 0.58, riskScore: 48.0, riskLevel: 'MEDIUM', availabilityStatus: 'Ready' }
+                                ]).map((playerItem) => (
+                                    <div key={playerItem.playerId} className={`p-4 rounded-xl border transition-all ${
+                                        playerItem.riskLevel === 'HIGH' 
+                                            ? 'bg-red-500/5 border-red-500/30' 
+                                            : playerItem.riskLevel === 'MEDIUM' 
+                                                ? 'bg-amber-500/5 border-amber-500/30' 
+                                                : 'bg-slate-50 dark:bg-[#0c0c12] border-slate-200 dark:border-[#1e1e2a]'
+                                    }`}>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <h5 className="text-xs font-black text-slate-900 dark:text-white">{playerItem.playerName}</h5>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{playerItem.role}</span>
+                                            </div>
+                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                                playerItem.riskLevel === 'HIGH' 
+                                                    ? 'bg-red-500/20 text-red-500 border-red-500/30 animate-pulse' 
+                                                    : playerItem.riskLevel === 'MEDIUM' 
+                                                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' 
+                                                        : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+                                            }`}>
+                                                {playerItem.riskLevel} RISK
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 my-2 text-[10px] font-bold">
+                                            <div className="bg-white dark:bg-[#13131a] p-2 rounded border border-slate-200 dark:border-[#1e1e2a]">
+                                                <span className="text-slate-400 text-[8px] block">HEART RATE</span>
+                                                <span className="text-slate-900 dark:text-white k-mono font-black">{playerItem.heartRate} BPM</span>
+                                            </div>
+                                            <div className="bg-white dark:bg-[#13131a] p-2 rounded border border-slate-200 dark:border-[#1e1e2a]">
+                                                <span className="text-slate-400 text-[8px] block">ACWR RATIO</span>
+                                                <span className={`k-mono font-black ${playerItem.acwr > 1.5 ? 'text-red-500' : 'text-emerald-500'}`}>{playerItem.acwr}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-2 pt-2 border-t border-slate-200 dark:border-[#1e1e2a] flex justify-between items-center text-[9px] font-bold text-slate-400">
+                                            <span>Risk Score: {playerItem.riskScore}%</span>
+                                            <span>Fatigue: {(playerItem.fatigueIndex * 100).toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Interactive Python ML Predictor Diagnostic Lab */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            
+                            {/* Controls */}
+                            <div className="lg:col-span-5 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-6 space-y-5">
+                                <div>
+                                    <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest block mb-1">PYTHON ML ENGINE CONTROLLER</span>
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white">RandomForest Injury Model Tuning</h3>
+                                </div>
+
+                                <div className="space-y-4 text-xs font-bold">
+                                    <div>
+                                        <div className="flex justify-between text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>WORKLOAD INDEX</span>
+                                            <span className="k-mono text-emerald-500 font-black">{(mlParams.workload * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0.1" max="1.0" step="0.05" value={mlParams.workload}
+                                            onChange={(e) => setMlParams({...mlParams, workload: parseFloat(e.target.value)})}
+                                            className="w-full accent-emerald-500 h-1 bg-slate-100 dark:bg-[#1e1e2a] rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>ACWR RATIO (Acute:Chronic)</span>
+                                            <span className="k-mono text-emerald-500 font-black">{mlParams.acwr}</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0.8" max="2.0" step="0.05" value={mlParams.acwr}
+                                            onChange={(e) => setMlParams({...mlParams, acwr: parseFloat(e.target.value)})}
+                                            className="w-full accent-emerald-500 h-1 bg-slate-100 dark:bg-[#1e1e2a] rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>REST DAYS</span>
+                                            <span className="k-mono text-emerald-500 font-black">{mlParams.restDays} Days</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0" max="10" step="1" value={mlParams.restDays}
+                                            onChange={(e) => setMlParams({...mlParams, restDays: parseInt(e.target.value)})}
+                                            className="w-full accent-emerald-500 h-1 bg-slate-100 dark:bg-[#1e1e2a] rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>INJURY HISTORY INDEX</span>
+                                            <span className="k-mono text-emerald-500 font-black">{(mlParams.historyIndex * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0.0" max="1.0" step="0.05" value={mlParams.historyIndex}
+                                            onChange={(e) => setMlParams({...mlParams, historyIndex: parseFloat(e.target.value)})}
+                                            className="w-full accent-emerald-500 h-1 bg-slate-100 dark:bg-[#1e1e2a] rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-slate-700 dark:text-slate-300 mb-1">
+                                            <span>MATCH FATIGUE INDEX</span>
+                                            <span className="k-mono text-emerald-500 font-black">{(mlParams.fatigue * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <input 
+                                            type="range" min="0.1" max="1.0" step="0.05" value={mlParams.fatigue}
+                                            onChange={(e) => setMlParams({...mlParams, fatigue: parseFloat(e.target.value)})}
+                                            className="w-full accent-emerald-500 h-1 bg-slate-100 dark:bg-[#1e1e2a] rounded-lg cursor-pointer"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={runMLInjuryPrediction}
+                                    disabled={mlLoading}
+                                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md flex items-center justify-center gap-2"
+                                >
+                                    {mlLoading ? <RefreshCw size={14} className="animate-spin" /> : <Cpu size={14} />} 
+                                    Execute Python RandomForest Model
+                                </button>
+                            </div>
+
+                            {/* Result Output */}
+                            <div className="lg:col-span-7 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-6 flex flex-col justify-between">
+                                <div>
+                                    <div className="flex justify-between items-center mb-4 border-b border-slate-100 dark:border-[#1e1e2a] pb-3">
+                                        <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Model Evaluation Output</h4>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                            {mlResult?.model_type || 'scikit-learn RandomForestClassifier'}
+                                        </span>
+                                    </div>
+
+                                    {mlResult ? (
+                                        <div className="space-y-4">
+                                            <div className="flex items-baseline justify-between">
+                                                <div>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">INJURY PROBABILITY</span>
+                                                    <h2 className="text-4xl font-black text-emerald-500 k-mono">{mlResult.risk_score}%</h2>
+                                                </div>
+                                                <span className={`px-3 py-1 rounded text-xs font-black uppercase border ${
+                                                    mlResult.risk_level === 'HIGH' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                                    mlResult.risk_level === 'MEDIUM' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                                    'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                                }`}>
+                                                    {mlResult.risk_level} RISK LEVEL
+                                                </span>
+                                            </div>
+
+                                            <div className="p-3 bg-slate-50 dark:bg-[#0c0c12] rounded-xl border border-slate-200 dark:border-[#1e1e2a]">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">AVAILABILITY & PLAYING STATUS</span>
+                                                <span className="text-sm font-black text-slate-900 dark:text-white">{mlResult.availability_status}</span>
+                                            </div>
+
+                                            <div>
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-2">CONTRIBUTING BIOMECHANICAL FACTORS</span>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {mlResult.contributing_factors?.map((factor, idx) => (
+                                                        <span key={idx} className="px-2.5 py-1 bg-blue-500/10 text-blue-500 border border-blue-500/20 rounded-lg text-[10px] font-bold">
+                                                            • {factor}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="py-12 text-center text-slate-400 space-y-2">
+                                            <Cpu size={32} className="mx-auto opacity-30" />
+                                            <p className="text-xs font-bold uppercase tracking-widest">Adjust sliders & execute Python Model</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#1e1e2a] flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                    <span>ACWR Threshold: 1.50</span>
+                                    <span>Confidence Score: {mlResult?.confidence_score || '0.91'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
             </div>
         </div>
     );
 };
 
 export default DashboardAnalyst;
+

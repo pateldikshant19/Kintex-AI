@@ -42,8 +42,11 @@ const DashboardManager = () => {
     const [match, setMatch] = useState(null);
     const [deliveries, setDeliveries] = useState([]);
     const [socketConnected, setSocketConnected] = useState(false);
+    const [liveTelemetry, setLiveTelemetry] = useState([]);
+    const [liveAlerts, setLiveAlerts] = useState([]);
     // eslint-disable-next-line no-unused-vars
     const [liveLogs, setLiveLogs] = useState(["Telemetry: Booting Manager Command Center..."]);
+
 
     // AI/ML States for interactive simulation
     const [aiTasks, setAiTasks] = useState({
@@ -157,13 +160,41 @@ const DashboardManager = () => {
 
         socketRef.current.on('connect', () => {
             setSocketConnected(true);
-            // We moved the join logic into the fetchMatchTelemetry function to wait for dynamic ID
         });
 
         socketRef.current.on('disconnect', () => {
             setSocketConnected(false);
             setLiveLogs(prev => [...prev, "Socket.IO: Connection severed."]);
         });
+
+        // Listen for real-time live injury risk telemetry stream
+        socketRef.current.on('liveInjuryRiskUpdate', (telemetryData) => {
+            if (Array.isArray(telemetryData) && telemetryData.length > 0) {
+                setLiveTelemetry(telemetryData);
+            }
+        });
+
+        // Listen for live high-risk alerts during match
+        socketRef.current.on('liveInjuryAlert', (alertPayload) => {
+            if (alertPayload && alertPayload.alerts) {
+                setLiveAlerts(prev => [...alertPayload.alerts, ...prev].slice(0, 5));
+            }
+        });
+
+        // Fetch initial telemetry via REST fallback
+        const fetchInitialLiveTelemetry = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const API_BASE = process.env.REACT_APP_API_URL || '/api';
+                const res = await fetch(`${API_BASE}/injury-intelligence/live-telemetry`, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) setLiveTelemetry(data);
+                }
+            } catch (err) { }
+        };
+        fetchInitialLiveTelemetry();
 
         socketRef.current.on('deliveryUpdate', (data) => {
             setLiveLogs(prev => [
@@ -199,6 +230,7 @@ const DashboardManager = () => {
             // Update aggregated chart data
             setChartData(prev => [...prev.slice(1), Math.round(data.aiPredictions.winProbability * 100)]);
         });
+
 
         return () => {
             if (socketRef.current) {
@@ -738,9 +770,82 @@ const DashboardManager = () => {
                                     SUGGESTION: {aiTasks.fatigue.suggest}
                                 </div>
                             </div>
+
+                            {/* Real-Time Live Match Telemetry Monitor Grid */}
+                            <div className="md:col-span-2 bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-6 space-y-4">
+                                <div className="flex justify-between items-center border-b border-slate-100 dark:border-[#1e1e2a] pb-3">
+                                    <div>
+                                        <h4 className="text-sm font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                            <Activity size={16} className="text-red-500 animate-pulse" />
+                                            Live Match Real-Time Player Biometric & Injury Radar
+                                        </h4>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                                            Socket.IO Live Feed • ACWR Workload Ratio • Heart Rate & Fatigue Telemetry
+                                        </p>
+                                    </div>
+                                    <span className="px-2.5 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full text-[9px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span> Live Match Active
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                    {(liveTelemetry.length > 0 ? liveTelemetry : [
+                                        { playerId: 'ind-1', playerName: 'Virat Kohli', role: 'Batter', heartRate: 142, speedKmH: 24.2, acwr: 1.25, fatigueIndex: 0.38, riskLevel: 'LOW', availabilityStatus: 'Ready' },
+                                        { playerId: 'ind-2', playerName: 'Rohit Sharma', role: 'Batter', heartRate: 138, speedKmH: 21.0, acwr: 1.30, fatigueIndex: 0.45, riskLevel: 'MEDIUM', availabilityStatus: 'Limited' },
+                                        { playerId: 'ind-3', playerName: 'Jasprit Bumrah', role: 'Bowler', heartRate: 165, speedKmH: 28.4, acwr: 1.62, fatigueIndex: 0.72, riskLevel: 'HIGH', availabilityStatus: 'Unavailable' },
+                                        { playerId: 'ind-4', playerName: 'Hardik Pandya', role: 'All Rounder', heartRate: 155, speedKmH: 26.1, acwr: 1.48, fatigueIndex: 0.58, riskLevel: 'MEDIUM', availabilityStatus: 'Ready' }
+                                    ]).map((playerItem) => (
+                                        <div key={playerItem.playerId} className={`p-4 rounded-xl border transition-all ${
+                                            playerItem.riskLevel === 'HIGH' 
+                                                ? 'bg-red-500/5 border-red-500/30' 
+                                                : playerItem.riskLevel === 'MEDIUM' 
+                                                    ? 'bg-amber-500/5 border-amber-500/30' 
+                                                    : 'bg-slate-50 dark:bg-[#0c0c12] border-slate-200 dark:border-[#1e1e2a]'
+                                        }`}>
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <h5 className="text-xs font-black text-slate-900 dark:text-white">{playerItem.playerName}</h5>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{playerItem.role}</span>
+                                                </div>
+                                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase border ${
+                                                    playerItem.riskLevel === 'HIGH' 
+                                                        ? 'bg-red-500/20 text-red-500 border-red-500/30 animate-pulse' 
+                                                        : playerItem.riskLevel === 'MEDIUM' 
+                                                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/30' 
+                                                            : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30'
+                                                }`}>
+                                                    {playerItem.riskLevel} RISK
+                                                </span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2 my-2 text-[10px] font-bold">
+                                                <div className="bg-white dark:bg-[#13131a] p-1.5 rounded border border-slate-200 dark:border-[#1e1e2a]">
+                                                    <span className="text-slate-400 text-[8px] block">HEART RATE</span>
+                                                    <span className="text-slate-900 dark:text-white k-mono font-black">{playerItem.heartRate} BPM</span>
+                                                </div>
+                                                <div className="bg-white dark:bg-[#13131a] p-1.5 rounded border border-slate-200 dark:border-[#1e1e2a]">
+                                                    <span className="text-slate-400 text-[8px] block">ACWR RATIO</span>
+                                                    <span className={`k-mono font-black ${playerItem.acwr > 1.5 ? 'text-red-500' : 'text-emerald-500'}`}>{playerItem.acwr}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-2 pt-2 border-t border-slate-200 dark:border-[#1e1e2a] flex justify-between items-center">
+                                                <span className="text-[9px] font-bold text-slate-400">Fatigue: {(playerItem.fatigueIndex * 100).toFixed(0)}%</span>
+                                                <button 
+                                                    onClick={() => alert(`Manager Alert Sent: Immediate rest & substitution recommended for ${playerItem.playerName}`)}
+                                                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[8px] font-black uppercase tracking-wider"
+                                                >
+                                                    Rotate Player
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
+
 
                 {/* 4. FIELD PITCH TACTICS TAB (react-konva) */}
                 {activeTab === 'tactics' && (

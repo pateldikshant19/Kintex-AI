@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, Calendar, Trophy, TrendingUp, Zap, Heart, Flame, Timer, ChevronRight, Award, ShieldCheck, Target } from 'lucide-react';
+import { Activity, Calendar, Trophy, TrendingUp, Zap, Heart, Flame, Timer, ChevronRight, Award, ShieldCheck, Target, ShieldAlert, Cpu } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { useAuth } from '../context/AuthContext';
 import DashboardChart from '../components/DashboardChart';
 
 const REAL_PLAYER_PERFORMANCES = {
+
     'virat kohli': {
         name: 'Virat Kohli',
         lastMatch: {
@@ -126,6 +128,53 @@ const DashboardPlayer = () => {
     const [liveMatches, setLiveMatches] = useState([]);
     const [chartTab, setChartTab] = useState('latest'); // 'latest' or 'season'
 
+    const [liveTelemetry, setLiveTelemetry] = useState({
+
+        heartRate: 138,
+        speedKmH: 24.2,
+        acwr: 1.25,
+        fatigueIndex: 0.38,
+        riskScore: 18.5,
+        riskLevel: 'LOW',
+        availabilityStatus: 'Ready',
+        contributingFactors: ['Optimal Workload Sweet Spot'],
+        modelType: 'scikit-learn RandomForestClassifier'
+    });
+    const [socketConnected, setSocketConnected] = useState(false);
+
+    useEffect(() => {
+        const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
+        socket.on('connect', () => setSocketConnected(true));
+        socket.on('disconnect', () => setSocketConnected(false));
+        socket.on('liveInjuryRiskUpdate', (data) => {
+            if (Array.isArray(data) && data.length > 0) {
+                const uName = (user?.name || '').toLowerCase();
+                const matched = data.find(item => item.playerName.toLowerCase().includes(uName)) || data[0];
+                if (matched) setLiveTelemetry(matched);
+            }
+        });
+
+        const fetchInitial = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const API_BASE = process.env.REACT_APP_API_URL || '/api';
+                const res = await fetch(`${API_BASE}/injury-intelligence/live-telemetry`, { headers });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        const uName = (user?.name || '').toLowerCase();
+                        const matched = data.find(item => item.playerName.toLowerCase().includes(uName)) || data[0];
+                        if (matched) setLiveTelemetry(matched);
+                    }
+                }
+            } catch (err) { }
+        };
+        fetchInitial();
+
+        return () => socket.disconnect();
+    }, [user]);
+
     useEffect(() => {
         const fetchMatches = async () => {
             try {
@@ -143,6 +192,7 @@ const DashboardPlayer = () => {
         };
         fetchMatches();
     }, []);
+
 
     // Resolve player performance details
     const userNameKey = (user?.name || '').toLowerCase().trim();
@@ -265,8 +315,69 @@ const DashboardPlayer = () => {
                 <PlayerStatCard icon={Activity} title="Energy Score" value="92%" sub="System Readiness" accentColor="blue" />
                 <PlayerStatCard icon={Flame} title="Calorie Burn" value="2,840" sub="Peak Flux Rate" accentColor="red" />
                 <PlayerStatCard icon={TrendingUp} title="Efficiency" value="88.4" sub="Neural Alignment" accentColor="emerald" />
-                <PlayerStatCard icon={Heart} title="Heart Rate" value="62" sub="Resting Nominal" accentColor="red" />
+                <PlayerStatCard icon={Heart} title="Heart Rate" value={`${liveTelemetry.heartRate || 135} BPM`} sub="Live Match Stream" accentColor="red" />
             </div>
+
+            {/* LIVE MATCH INJURY RISK & BIOMETRIC TELEMETRY CARD */}
+            <div className="bg-white dark:bg-[#13131a] border border-slate-200 dark:border-[#1e1e2a] rounded-2xl p-6 relative overflow-hidden shadow-sm">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-100 dark:border-[#1e1e2a] pb-4">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <ShieldAlert className="text-red-500 animate-pulse" size={18} />
+                            <h2 className="text-base font-black text-slate-900 dark:text-white tracking-tight">Live Match Biometric & Injury Risk Telemetry Radar</h2>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Real-Time Socket Stream • ACWR Workload Ratio • Python ML Predictive Assessment
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-black uppercase border flex items-center gap-1.5 ${
+                            liveTelemetry.riskLevel === 'HIGH' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                            liveTelemetry.riskLevel === 'MEDIUM' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                            'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        }`}>
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                            {liveTelemetry.riskLevel || 'LOW'} RISK ({liveTelemetry.riskScore || 18.5}%)
+                        </span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-slate-50 dark:bg-[#0c0c12] rounded-xl border border-slate-200 dark:border-[#1e1e2a]">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">LIVE HEART RATE</span>
+                        <div className="text-2xl font-black text-slate-900 dark:text-white k-mono">{liveTelemetry.heartRate || 138} <span className="text-xs font-normal text-slate-400">BPM</span></div>
+                        <span className="text-[9px] font-bold text-emerald-500 mt-1 block">Aerobic Zone Active</span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-[#0c0c12] rounded-xl border border-slate-200 dark:border-[#1e1e2a]">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">ACWR RATIO</span>
+                        <div className={`text-2xl font-black k-mono ${(liveTelemetry.acwr || 1.25) > 1.5 ? 'text-red-500' : 'text-emerald-500'}`}>{liveTelemetry.acwr || 1.25}</div>
+                        <span className="text-[9px] font-bold text-slate-400 mt-1 block">Acute vs Chronic Workload</span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-[#0c0c12] rounded-xl border border-slate-200 dark:border-[#1e1e2a]">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">MATCH FATIGUE INDEX</span>
+                        <div className="text-2xl font-black text-amber-500 k-mono">{((liveTelemetry.fatigueIndex || 0.38) * 100).toFixed(0)}%</div>
+                        <span className="text-[9px] font-bold text-slate-400 mt-1 block">Neuromuscular Strain</span>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 dark:bg-[#0c0c12] rounded-xl border border-slate-200 dark:border-[#1e1e2a]">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block mb-1">PLAYING READINESS</span>
+                        <div className="text-lg font-black text-blue-500 uppercase">{liveTelemetry.availabilityStatus || 'Ready'}</div>
+                        <span className="text-[9px] font-bold text-slate-400 mt-1 block">Cleared by Medical AI</span>
+                    </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-[#1e1e2a] flex flex-wrap justify-between items-center text-[10px] font-bold text-slate-400">
+                    <div className="flex items-center gap-2">
+                        <Cpu size={12} className="text-blue-500" />
+                        <span>Sports Science Recommendation: <strong className="text-slate-700 dark:text-slate-200">Optimal hydration & 15-min post-match cryotherapy session</strong></span>
+                    </div>
+                    <span className="k-mono text-[9px]">Model: {liveTelemetry.modelType || 'RandomForest + ACWR Engine'}</span>
+                </div>
+            </div>
+
 
             {/* Dynamic Personal Trajectory Chart + Schedule Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

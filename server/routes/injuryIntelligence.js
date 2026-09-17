@@ -255,4 +255,14 @@ router.post('/ml-predict', auth, async (req, res) => {
   }
 });
 
+router.get('/live-telemetry', auth, async (req, res) => {
+  try {
+    const telemetry = await liveMatchEngine.generateLivePlayerInjuryTelemetry();
+    res.json(telemetry);
+  } catch (err) {
+    res.status(500).json({ msg: 'Failed to generate live telemetry' });
+  }
+});
+
 module.exports = router;
+
