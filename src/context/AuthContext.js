@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
             if (!response.ok) throw new Error(data.error || 'Request failed');
             return data;
         } else {
-            throw new Error(`Server returned unexpected response (${response.status}).`);
+            throw new Error(`Server returned unexpected response (${response.status}) when calling ${options.method || 'GET'} ${url}. Content-Type was ${contentType}`);
         }
     };
 
