@@ -14,11 +14,12 @@ const PlayerBio = () => {
                 const token = localStorage.getItem('token');
                 if (!token) return;
                 
+                const API_BASE = process.env.REACT_APP_API_URL || '/api';
                 const [res, intelRes] = await Promise.all([
-                    fetch(`${process.env.REACT_APP_API_URL}/players/${id}`, {
+                    fetch(`${API_BASE}/players/${id}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     }),
-                    fetch(`${process.env.REACT_APP_API_URL}/injury-intelligence/profile?playerId=${id}`, {
+                    fetch(`${API_BASE}/injury-intelligence/profile?playerId=${id}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                 ]);

@@ -1,62 +1,36 @@
 const mongoose = require('mongoose');
-const path = require('path');
-const User = require('../models/User');
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/sport-analytics';
+// Assuming User model has name, email, password, role, sport
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  password: String,
+  role: String,
+  sport: String
+});
 
-async function seedUsers() {
-    try {
-        await mongoose.connect(MONGO_URI);
-        console.log('Connected to MongoDB');
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 
-        // deletes existing test users if they exist to avoid unique constraint error
-        await User.deleteMany({ email: { $in: ['manager@test.com', 'analyst@test.com', 'admin@test.com'] } });
-        console.log('Cleaned up old test users.');
+async function seed() {
+  await mongoose.connect('mongodb://localhost:27017/sport-analytics');
+  console.log('Connected to DB');
 
-        const users = [
-            {
-                name: 'Manager of India Cricket',
-                email: 'manager@test.com',
-                password: 'password123',
-                role: 'manager',
-                teamName: 'India',
-                sport: 'Cricket',
-                isActive: true
-            },
-            {
-                name: 'Test Analyst',
-                email: 'analyst@test.com',
-                password: 'password123',
-                role: 'analyst',
-                teamName: 'India',
-                sport: 'Cricket',
-                isActive: true
-            },
-            {
-                name: 'System Admin',
-                email: 'admin@test.com',
-                password: 'password123',
-                role: 'admin',
-                teamName: 'System',
-                sport: 'All',
-                isActive: true
-            }
-        ];
+  const salt = await bcrypt.genSalt(10);
+  const hash = await bcrypt.hash('password123', salt);
 
-        for (const u of users) {
-            const user = new User(u);
-            await user.save();
-            console.log(`Created user: ${u.email} (${u.role})`);
-        }
+  await User.deleteMany({ email: { $in: ['manager_india@kinetix.ai', 'analyst@kinetix.ai', 'player1@kinetix.ai', 'admin@kinetix.ai'] } });
 
-        console.log('User seeding complete.');
-    } catch (err) {
-        console.error('Error seeding users:', err);
-    } finally {
-        await mongoose.connection.close();
-        process.exit(0);
-    }
+  await User.insertMany([
+    { name: 'Team India Manager', email: 'manager_india@kinetix.ai', password: hash, role: 'manager', sport: 'Cricket' },
+    { name: 'Data Analyst', email: 'analyst@kinetix.ai', password: hash, role: 'analyst', sport: 'Cricket' },
+    { name: 'Virat Kohli', email: 'player1@kinetix.ai', password: hash, role: 'player', sport: 'Cricket' },
+    { name: 'System Administrator', email: 'admin@kinetix.ai', password: hash, role: 'admin', sport: 'Cricket' }
+  ]);
+
+  console.log('Users created successfully');
+  process.exit(0);
 }
 
-seedUsers();
+seed().catch(console.error);

@@ -62,7 +62,7 @@ function calculateWinProbability(teamA_Runs, teamB_Runs, status) {
 function normalizeMatch(rawMatch) {
   if (!rawMatch) return null;
 
-  const id = (rawMatch.id || rawMatch.match_id || rawMatch.matchId || `match-${Date.now()}`).toString();
+  const id = (rawMatch.match_id || rawMatch.matchId || (rawMatch._id && rawMatch._id.toString()) || rawMatch.id || `match-${Date.now()}`).toString();
   const name = rawMatch.name || rawMatch.matchName || rawMatch.matchup || 'Cricket Match';
   const status = rawMatch.status || rawMatch.matchStatus || 'Live';
   const venue = rawMatch.venue || 'International Stadium';

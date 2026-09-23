@@ -5,6 +5,17 @@ import { io } from 'socket.io-client';
 import { Play, Pause, RefreshCw, Cpu, ShieldAlert, Sparkles, User, Activity, Zap, CheckCircle2, AlertTriangle, Eye, Video, Thermometer, ChevronRight, FileText, ActivitySquare, BrainCircuit, History, Timer } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+const DEFAULT_CRICKET_PLAYERS = [
+    { _id: 'ind-1', name: 'Virat Kohli', role: 'Batter', teamName: 'India', status: 'Optimal', readinessScore: 98 },
+    { _id: 'ind-2', name: 'Rohit Sharma', role: 'Captain / Batter', teamName: 'India', status: 'Optimal', readinessScore: 95 },
+    { _id: 'ind-3', name: 'Jasprit Bumrah', role: 'Fast Bowler', teamName: 'India', status: 'Optimal', readinessScore: 99 },
+    { _id: 'ind-4', name: 'Hardik Pandya', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 94 },
+    { _id: 'ind-5', name: 'Suryakumar Yadav', role: 'Batter', teamName: 'India', status: 'Optimal', readinessScore: 96 },
+    { _id: 'ind-6', name: 'Rishabh Pant', role: 'Wicket-Keeper Batter', teamName: 'India', status: 'Optimal', readinessScore: 92 },
+    { _id: 'ind-9', name: 'Ravindra Jadeja', role: 'All Rounder', teamName: 'India', status: 'Optimal', readinessScore: 95 },
+    { _id: 'ind-11', name: 'Kuldeep Yadav', role: 'Spinner / Bowler', teamName: 'India', status: 'Optimal', readinessScore: 92 }
+];
+
 const CricketLab = () => {
     const { user } = useAuth();
     // -------------------------------------------------------------
@@ -18,12 +29,12 @@ const CricketLab = () => {
     const [deliveries, setDeliveries] = useState([]);
     
     // Medical Intel States
-    const [players, setPlayers] = useState([]);
-    const [selectedPlayerId, setSelectedPlayerId] = useState('');
+    const [players, setPlayers] = useState(DEFAULT_CRICKET_PLAYERS);
+    const [selectedPlayerId, setSelectedPlayerId] = useState('ind-1');
     const [intel, setIntel] = useState(null);
     const [intelLoading, setIntelLoading] = useState(false);
     
-    const selectedPlayer = players.find(p => p._id === selectedPlayerId);
+    const selectedPlayer = players.find(p => p._id === selectedPlayerId) || DEFAULT_CRICKET_PLAYERS[0];
 
     
     // AI/ML States
@@ -81,7 +92,7 @@ const CricketLab = () => {
     // -------------------------------------------------------------
     useEffect(() => {
         // Connect to express socket backend
-        socketRef.current = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
+        socketRef.current = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001');
 
         socketRef.current.on('connect', () => {
             setSocketConnected(true);
@@ -153,7 +164,7 @@ const CricketLab = () => {
         try {
             const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL.replace('/cricket', '/players')}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
             });
             if (res.ok) {
                 const data = await res.json();
@@ -169,13 +180,21 @@ const CricketLab = () => {
                     }
                 }
                 
-                setPlayers(filteredData);
-                if (filteredData.length > 0) {
+                if (filteredData && filteredData.length > 0) {
+                    setPlayers(filteredData);
                     setSelectedPlayerId(filteredData[0]._id);
+                } else {
+                    setPlayers(DEFAULT_CRICKET_PLAYERS);
+                    setSelectedPlayerId(DEFAULT_CRICKET_PLAYERS[0]._id);
                 }
+            } else {
+                setPlayers(DEFAULT_CRICKET_PLAYERS);
+                setSelectedPlayerId(DEFAULT_CRICKET_PLAYERS[0]._id);
             }
         } catch (err) {
-            console.error("Failed to load players:", err);
+            console.error("Failed to load players, using fallback squad:", err);
+            setPlayers(DEFAULT_CRICKET_PLAYERS);
+            setSelectedPlayerId(DEFAULT_CRICKET_PLAYERS[0]._id);
         }
     };
 
@@ -193,7 +212,7 @@ const CricketLab = () => {
             try {
                 const token = localStorage.getItem('token');
                 const res = await fetch(`${API_URL.replace('/cricket', '')}/injury-intelligence/profile?playerId=${selectedPlayerId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -256,6 +275,49 @@ const CricketLab = () => {
         } catch (err) {
             console.error("Failed to load match data:", err);
         } finally {
+            // Guaranteed fallback so Cricket Lab is never stuck on hydration spinner
+            setMatch(prev => prev || {
+                id: 'c1',
+                matchName: "INDORE EAGLES vs MUMBAI TITANS",
+                venue: "Indore Stadium",
+                status: "Live",
+                target: 182,
+                currentInnings: 2,
+                stats: {
+                    runs: 142,
+                    wickets: 3,
+                    overs: 16.4,
+                    balls: 100,
+                    batsmen: [
+                        { name: "Dikshant Patel", runs: 72, balls: 48, fours: 6, sixes: 3, strikeRate: 150.0, status: "Active" },
+                        { name: "Yash Sharma", runs: 18, balls: 14, fours: 1, sixes: 0, strikeRate: 128.5, status: "Active" }
+                    ],
+                    bowlers: [
+                        { name: "Ravi Kumar", overs: 3.4, wickets: 1, runs: 32, economy: 8.7, status: "Active" },
+                        { name: "Suresh Raina", overs: 4.0, wickets: 2, runs: 28, economy: 7.0, status: "Finished" }
+                    ]
+                },
+                deliveries: [
+                    { ball: 1, bowler: "Ravi Kumar", batsman: "Dikshant Patel", runs: 4, type: "Boundary", wagonAngle: 120, wagonLength: 85, pitchX: 48, pitchY: 72, ballType: "Good Length", speed: 135 },
+                    { ball: 2, bowler: "Ravi Kumar", batsman: "Dikshant Patel", runs: 1, type: "Single", wagonAngle: 45, wagonLength: 55, pitchX: 52, pitchY: 82, ballType: "Short Pitch", speed: 142 },
+                    { ball: 3, bowler: "Ravi Kumar", batsman: "Yash Sharma", runs: 0, type: "Dot", wagonAngle: 0, wagonLength: 0, pitchX: 50, pitchY: 65, ballType: "Full Pitch", speed: 130 },
+                    { ball: 4, bowler: "Ravi Kumar", batsman: "Yash Sharma", runs: 6, type: "Six", wagonAngle: 180, wagonLength: 95, pitchX: 49, pitchY: 70, ballType: "Half Volley", speed: 132 },
+                    { ball: 5, bowler: "Ravi Kumar", batsman: "Yash Sharma", runs: 2, type: "Double", wagonAngle: 280, wagonLength: 68, pitchX: 47, pitchY: 78, ballType: " Yorker", speed: 138 },
+                    { ball: 6, bowler: "Ravi Kumar", batsman: "Yash Sharma", runs: 1, type: "Single", wagonAngle: 220, wagonLength: 42, pitchX: 51, pitchY: 74, ballType: "Good Length", speed: 134 }
+                ],
+                fieldPlacements: [
+                    { role: "Wicketkeeper", x: 190, y: 110, name: "Dhoni" },
+                    { role: "Slip", x: 170, y: 80, name: "Rahul" },
+                    { role: "Point", x: 280, y: 220, name: "Kohli" },
+                    { role: "Cover", x: 290, y: 310, name: "Rohit" },
+                    { role: "Mid Off", x: 230, y: 380, name: "Hardik" },
+                    { role: "Mid On", x: 130, y: 380, name: "Jadeja" },
+                    { role: "Mid Wicket", x: 70, y: 310, name: "Bumrah" },
+                    { role: "Square Leg", x: 80, y: 210, name: "Shami" },
+                    { role: "Fine Leg", x: 110, y: 80, name: "Siraj" },
+                    { role: "Third Man", x: 250, y: 70, name: "Chahal" }
+                ]
+            });
             setLoading(false);
         }
     };

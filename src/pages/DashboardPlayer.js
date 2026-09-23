@@ -143,7 +143,7 @@ const DashboardPlayer = () => {
     const [socketConnected, setSocketConnected] = useState(false);
 
     useEffect(() => {
-        const socket = io(process.env.REACT_APP_SOCKET_URL || window.location.origin);
+        const socket = io(process.env.REACT_APP_SOCKET_URL || 'http://localhost:3001');
         socket.on('connect', () => setSocketConnected(true));
         socket.on('disconnect', () => setSocketConnected(false));
         socket.on('liveInjuryRiskUpdate', (data) => {
