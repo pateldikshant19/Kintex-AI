@@ -1,0 +1,13 @@
+{
+  "_id": "6a339fa35d30d33b4596ba80",
+  "name": "Amol Muzumdar (Manager)",
+  "email": "manager@india.com",
+  "password": "$2a$10$RRQRNN6oOzJBLhS/HbQOXebTsqL0VfyZelbYH96Fqfh2s5JrkDEK.",
+  "role": "manager",
+  "sport": "Cricket",
+  "teamName": "India Women",
+  "isActive": true,
+  "createdAt": "2026-06-18T07:34:59.836Z",
+  "updatedAt": "2026-06-18T07:34:59.836Z",
+  "__v": 0
+}

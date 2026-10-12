@@ -1,0 +1,42 @@
+{
+  "_id": "6aaa2c408b1897bd78967b30",
+  "name": "Raymond Jones",
+  "sport": "Football",
+  "teamName": "LIGASPORT",
+  "position": "Goalkeeper",
+  "bio": "Raymond Jones is a dedicated Goalkeeper known for their exceptional commitment to Football. A key asset to the team.",
+  "records": [
+    "95% passing accuracy",
+    "Most clean sheets in a row"
+  ],
+  "active": true,
+  "retired": false,
+  "activeLeagueIds": [],
+  "radarMetrics": {
+    "power": 85,
+    "speed": 80,
+    "precision": 90,
+    "timing": 88,
+    "endurance": 85,
+    "technique": 92
+  },
+  "physicalStats": {
+    "height": 184,
+    "weight": 89,
+    "bodyFatPercentage": 17
+  },
+  "injuryHistory": [
+    {
+      "date": "2025-12-07T14:37:47.589Z",
+      "type": "Muscle Fatigue",
+      "severity": "Low",
+      "recoveryTime": 3,
+      "_id": "6aaa2c408b1897bd78967b31"
+    }
+  ],
+  "updatedAt": "2026-09-16T05:42:24.985Z",
+  "performanceHistory": [],
+  "trainingData": [],
+  "createdAt": "2026-09-16T05:42:24.985Z",
+  "__v": 0
+}

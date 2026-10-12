@@ -1,0 +1,30 @@
+{
+  "_id": "6a2d062013000110bc3391b4",
+  "match_id": 160570,
+  "date": "2026-06-13",
+  "dateTimeGMT": "2026-06-13 09:24:30.287384",
+  "matchType": "T20",
+  "name": "Jabalpur Royal Lions vs Malwa Stallions",
+  "score": {
+    "team1Score": {
+      "inngs1": {
+        "inningsId": 1,
+        "runs": 205,
+        "wickets": 5,
+        "overs": 19.6
+      }
+    },
+    "team2Score": {
+      "inngs1": {
+        "inningsId": 2,
+        "runs": 151,
+        "wickets": 10,
+        "overs": 18.4
+      }
+    }
+  },
+  "status": "Jabalpur Royal Lions won by 54 runs",
+  "teams": [],
+  "updatedAt": "2026-06-13T09:24:30.287Z",
+  "venue": null
+}

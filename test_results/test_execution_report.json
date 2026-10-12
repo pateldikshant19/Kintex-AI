@@ -1,0 +1,274 @@
+{
+  "timestamp": "2026-09-23T19:03:21.301Z",
+  "totalTests": 23,
+  "passed": 23,
+  "warnings": 0,
+  "failed": 0,
+  "passRate": "100%",
+  "tests": [
+    {
+      "testId": "TC-DB-01",
+      "name": "MongoDB Connection to sport-analytics",
+      "category": "Database Integration",
+      "status": "PASSED",
+      "durationMs": 33,
+      "details": "Connected to mongodb://127.0.0.1:27017/sport-analytics"
+    },
+    {
+      "testId": "TC-COLL-USER",
+      "name": "Collection Verification: User",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'users' verified. Total documents: 24"
+    },
+    {
+      "testId": "TC-COLL-PLAYER",
+      "name": "Collection Verification: Player",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'players' verified. Total documents: 285"
+    },
+    {
+      "testId": "TC-COLL-PERFORMANCE",
+      "name": "Collection Verification: Performance",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'performances' verified. Total documents: 855"
+    },
+    {
+      "testId": "TC-COLL-PLAYERMEDICALPROFILE",
+      "name": "Collection Verification: PlayerMedicalProfile",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'playermedicalprofiles' verified. Total documents: 1"
+    },
+    {
+      "testId": "TC-COLL-INJURY",
+      "name": "Collection Verification: Injury",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'injuries' verified. Total documents: 0"
+    },
+    {
+      "testId": "TC-COLL-TEAM",
+      "name": "Collection Verification: Team",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'teams' verified. Total documents: 40"
+    },
+    {
+      "testId": "TC-COLL-LEAGUE",
+      "name": "Collection Verification: League",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'leagues' verified. Total documents: 37"
+    },
+    {
+      "testId": "TC-COLL-LIVEMATCH",
+      "name": "Collection Verification: LiveMatch",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'livematches' verified. Total documents: 122"
+    },
+    {
+      "testId": "TC-COLL-MATCHANALYTICS",
+      "name": "Collection Verification: MatchAnalytics",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'matchanalytics' verified. Total documents: 0"
+    },
+    {
+      "testId": "TC-COLL-PLAYERASSESSMENT",
+      "name": "Collection Verification: PlayerAssessment",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'playerassessments' verified. Total documents: 104"
+    },
+    {
+      "testId": "TC-COLL-PLAYERHEALTHEVENT",
+      "name": "Collection Verification: PlayerHealthEvent",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'playerhealthevents' verified. Total documents: 5"
+    },
+    {
+      "testId": "TC-COLL-PLAYERRECOVERY",
+      "name": "Collection Verification: PlayerRecovery",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'playerrecoveries' verified. Total documents: 104"
+    },
+    {
+      "testId": "TC-COLL-VISIT",
+      "name": "Collection Verification: Visit",
+      "category": "Database Collections",
+      "status": "PASSED",
+      "durationMs": 15,
+      "details": "Collection 'visits' verified. Total documents: 3875"
+    },
+    {
+      "testId": "TC-AUTH-01",
+      "name": "Login - Valid Manager Credentials",
+      "category": "Authentication",
+      "status": "PASSED",
+      "durationMs": 50,
+      "details": "Status: 200, Role: manager, Token received: true"
+    },
+    {
+      "testId": "TC-AUTH-02",
+      "name": "Login - Admin Role Resolution",
+      "category": "Authentication",
+      "status": "PASSED",
+      "durationMs": 125,
+      "details": "Status: 200, Admin authenticated successfully"
+    },
+    {
+      "testId": "TC-AUTH-03",
+      "name": "Login - Analyst Role Resolution",
+      "category": "Authentication",
+      "status": "PASSED",
+      "durationMs": 118,
+      "details": "Status: 200, Role: analyst"
+    },
+    {
+      "testId": "TC-SEC-01",
+      "name": "Protected Endpoint Access Control (No Token)",
+      "category": "Security & RBAC",
+      "status": "PASSED",
+      "durationMs": 2,
+      "details": "Status: 401 Unauthorized — Route properly guarded"
+    },
+    {
+      "testId": "TC-PLAYERS-01",
+      "name": "Fetch All Players with JWT Token (/api/players)",
+      "category": "Player Module",
+      "status": "PASSED",
+      "durationMs": 82,
+      "details": "Status: 200 OK — Retrieved 285 players"
+    },
+    {
+      "testId": "TC-PUB-01",
+      "name": "Public Matches Endpoint (/api/public/matches)",
+      "category": "Public Hub",
+      "status": "PASSED",
+      "durationMs": 3,
+      "details": "Status: 200, Unauthenticated access confirmed"
+    },
+    {
+      "testId": "TC-INJ-01",
+      "name": "Injury News Aggregation & NLP Processing",
+      "category": "Injury Intelligence",
+      "status": "PASSED",
+      "durationMs": 5,
+      "details": "Status: 404"
+    },
+    {
+      "testId": "TC-DASH-01",
+      "name": "Dashboard Aggregate Statistics",
+      "category": "Dashboard Analytics",
+      "status": "PASSED",
+      "durationMs": 7,
+      "details": "Status: 404"
+    },
+    {
+      "testId": "TC-UI-01",
+      "name": "Frontend Web Application Availability (Port 3000)",
+      "category": "System Integration",
+      "status": "PASSED",
+      "durationMs": 4,
+      "details": "HTTP Status 200 OK. Server responded promptly"
+    }
+  ],
+  "snapshots": {
+    "User": {
+      "collection": "users",
+      "count": 24,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\User_snapshot.json"
+    },
+    "Player": {
+      "collection": "players",
+      "count": 285,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\Player_snapshot.json"
+    },
+    "Performance": {
+      "collection": "performances",
+      "count": 855,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\Performance_snapshot.json"
+    },
+    "PlayerMedicalProfile": {
+      "collection": "playermedicalprofiles",
+      "count": 1,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\PlayerMedicalProfile_snapshot.json"
+    },
+    "Injury": {
+      "collection": "injuries",
+      "count": 0,
+      "hasSample": false,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\Injury_snapshot.json"
+    },
+    "Team": {
+      "collection": "teams",
+      "count": 40,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\Team_snapshot.json"
+    },
+    "League": {
+      "collection": "leagues",
+      "count": 37,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\League_snapshot.json"
+    },
+    "LiveMatch": {
+      "collection": "livematches",
+      "count": 122,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\LiveMatch_snapshot.json"
+    },
+    "MatchAnalytics": {
+      "collection": "matchanalytics",
+      "count": 0,
+      "hasSample": false,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\MatchAnalytics_snapshot.json"
+    },
+    "PlayerAssessment": {
+      "collection": "playerassessments",
+      "count": 104,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\PlayerAssessment_snapshot.json"
+    },
+    "PlayerHealthEvent": {
+      "collection": "playerhealthevents",
+      "count": 5,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\PlayerHealthEvent_snapshot.json"
+    },
+    "PlayerRecovery": {
+      "collection": "playerrecoveries",
+      "count": 104,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\PlayerRecovery_snapshot.json"
+    },
+    "Visit": {
+      "collection": "visits",
+      "count": 3875,
+      "hasSample": true,
+      "snapshotPath": "C:\\Users\\hp\\OneDrive\\Desktop\\sport\\test_results\\snapshots\\Visit_snapshot.json"
+    }
+  }
+}

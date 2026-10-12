@@ -1,0 +1,21 @@
+{
+  "_id": "6aaa429ff9ad8463d3150e7e",
+  "playerId": "6aaa2c408b1897bd78967b30",
+  "latestInjury": null,
+  "bodyPart": null,
+  "severity": null,
+  "injuryDate": null,
+  "trainingStatus": "training normally",
+  "medicalStatus": "fit",
+  "expectedReturn": "Ready",
+  "recoveryProgress": 100,
+  "confidence": 100,
+  "riskFactors": [],
+  "sourceArticles": [
+    "#"
+  ],
+  "historicalInjuries": [],
+  "createdAt": "2026-09-16T07:17:51.802Z",
+  "updatedAt": "2026-09-16T07:17:51.802Z",
+  "__v": 0
+}

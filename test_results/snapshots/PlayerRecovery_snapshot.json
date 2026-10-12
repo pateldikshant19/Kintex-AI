@@ -1,0 +1,15 @@
+{
+  "_id": "6a489b87221330d4916e497a",
+  "playerId": "6a2d0b6c13000110bc33921c",
+  "estimatedReturnDays": 0,
+  "recoveryWindow": "0 Days",
+  "progressStatus": "Unknown",
+  "confidence": 100,
+  "reasons": [
+    "No active injuries found on record."
+  ],
+  "assessedAt": "2026-07-04T05:35:03.287Z",
+  "createdAt": "2026-07-04T05:35:03.288Z",
+  "updatedAt": "2026-07-04T05:35:03.288Z",
+  "__v": 0
+}

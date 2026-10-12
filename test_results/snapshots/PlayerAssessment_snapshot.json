@@ -1,0 +1,14 @@
+{
+  "_id": "6a489b87221330d4916e4975",
+  "playerId": "6a2d0b6c13000110bc33921c",
+  "riskScore": 40,
+  "riskLevel": "Medium",
+  "availabilityStatus": "Limited Training",
+  "explanations": [
+    "Back mentioned 1 time(s) in the last 30 days"
+  ],
+  "assessedAt": "2026-07-04T05:35:03.271Z",
+  "createdAt": "2026-07-04T05:35:03.272Z",
+  "updatedAt": "2026-07-04T05:35:03.272Z",
+  "__v": 0
+}

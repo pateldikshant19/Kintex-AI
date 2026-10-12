@@ -1,0 +1,17 @@
+{
+  "_id": "6a489b87221330d4916e4971",
+  "playerId": "6a2d0b6c13000110bc33921c",
+  "articleId": "9abaace9985fe9782c14d8545276bdc2",
+  "sourceUrl": "https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_fe1c1283-08ea-42ab-bb27-75114d391a0e",
+  "sourceName": "Yahoo Entertainment",
+  "sourceReliability": 40,
+  "eventType": "Medical Update",
+  "bodyPart": "back",
+  "availabilityStatus": "Unknown",
+  "recoveryMention": false,
+  "confidence": 60,
+  "eventDate": "2026-06-25T16:59:37.000Z",
+  "createdAt": "2026-07-04T05:35:03.256Z",
+  "updatedAt": "2026-07-04T05:35:03.256Z",
+  "__v": 0
+}

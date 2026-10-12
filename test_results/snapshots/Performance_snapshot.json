@@ -1,0 +1,20 @@
+{
+  "_id": "6aaa2c408b1897bd78967b33",
+  "playerId": "6aaa2c408b1897bd78967b30",
+  "sport": "Football",
+  "date": "2026-09-16T05:42:24.993Z",
+  "physical_metrics": {
+    "fatigue_level": 0.3024318010829097,
+    "heart_rate": 93,
+    "speed": 34.137812676096445,
+    "reaction_time_ms": 233
+  },
+  "ai_targets": {
+    "win_probability": 0.8302088965767597,
+    "performance_drop_next_5min": 0.06734207650824249
+  },
+  "overallScore": 85,
+  "createdAt": "2026-09-16T05:42:24.999Z",
+  "updatedAt": "2026-09-16T05:42:24.999Z",
+  "__v": 0
+}
